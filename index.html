@@ -68,6 +68,28 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .top-actions{display:flex;align-items:center;gap:10px;flex:0 0 auto}
 .chip svg{width:16px;height:16px;flex:0 0 auto}
 .chip[hidden]{display:none!important}
+/* Private public page: only the pay card */
+body.pub-private #routePublic .hero,body.pub-private #routePublic .stat,body.pub-private #routePublic .ticker,body.pub-private #routePublic section.people{display:none!important}
+body.pub-private #routePublic .bento{grid-template-columns:minmax(0,1fr);grid-template-areas:"pay";max-width:560px;width:100%;margin:0 auto}
+.switch-row{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:16px;border:1px solid var(--line);background:#fff;cursor:pointer}
+.switch-row input{position:absolute;opacity:0;pointer-events:none}
+.switch{flex:0 0 auto;width:44px;height:26px;border-radius:99px;background:var(--line2);position:relative;transition:background .25s;margin-top:2px}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:transform .3s var(--spring)}
+.switch-row input:checked+.switch{background:var(--teal)}
+.switch-row input:checked+.switch::after{transform:translateX(18px)}
+.switch-row input:focus-visible+.switch{outline:2px solid var(--teal);outline-offset:2px}
+.switch-row b{display:block;font-size:14px}
+.switch-row small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.pick-title{font-family:var(--f-display);font-size:18px}
+.apps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.app{display:flex;align-items:center;gap:10px;padding:12px;border-radius:16px;border:1.5px solid var(--line);background:#fff;color:var(--ink);text-decoration:none;font-weight:700;font-size:14px;transition:transform .25s var(--spring),border-color .2s,box-shadow .25s;animation:rise .35s var(--ease) both;animation-delay:calc(var(--k,0)*45ms)}
+.app:hover,.app:focus-visible{transform:translateY(-2px);border-color:var(--teal);box-shadow:0 10px 24px -14px rgba(15,168,155,.7);outline:none}
+.app:active{transform:scale(.97)}
+.app i{flex:0 0 auto;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;color:#fff;font-style:normal;font-size:13px;font-weight:800;font-family:var(--f-display)}
+.app.other{grid-column:1/-1;justify-content:center}
+.pf-other{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.pf-other .field{flex:1 1 180px}
+.pf-hint{font-size:13px;color:var(--muted);margin:0}
 #routePublic,#routeAdmin,#console,.panel{grid-template-columns:minmax(0,1fr)}
 .console-head>*{min-width:0;max-width:100%}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:#fff;border:1px solid var(--line2);font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;box-shadow:var(--shadow);transition:transform .2s var(--spring)}
@@ -392,6 +414,10 @@ main{padding-block:28px 120px;display:grid;gap:20px}
 .linkish{background:none!important;border:0!important;box-shadow:none!important;color:var(--muted);font-weight:500;font-size:13px;padding:6px;white-space:normal;text-align:center}
 .linkish b{color:var(--teal);font-weight:700}
 .pop-in{animation:pfpop .55s var(--spring)}
+.pay-amt{padding:14px 12px;font-size:16px;border-radius:16px;animation:rise .4s var(--ease) both;animation-delay:calc(var(--k,0)*70ms)}
+.other-amt{grid-column:1/-1;border-style:dashed!important;background:#fff!important}
+.pay-now{grid-column:1/-1;padding:15px 18px;font-size:16px;border-radius:16px}
+.pay-now svg{width:20px;height:20px}
 .pay-cta{width:100%;padding:15px 18px;font-size:16px;border-radius:16px;animation:ctaGlow 2.6s ease-in-out infinite}
 .pay-cta svg{width:20px;height:20px}
 @keyframes ctaGlow{0%,100%{box-shadow:0 10px 24px -10px rgba(15,168,155,.8)}50%{box-shadow:0 10px 34px -6px rgba(15,168,155,.95),0 0 0 6px rgba(20,199,165,.15)}}
@@ -430,7 +456,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.aurora i{display:none}}
 </style>
 </head>
-<body>
+<body class="pub-private">
 
 <div class="aurora" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
 
@@ -479,13 +505,12 @@ main{padding-block:28px 120px;display:grid;gap:20px}
           <img id="qrImg" alt="Payment QR code" hidden>
         </div></div>
         <div class="upi" id="upiBox" hidden>
-          <div class="upi-head"><span class="upi-logo">UPI</span><div><b>Pay with a UPI app</b><small>Opens GPay, PhonePe, Paytm or any UPI app on your phone</small></div></div>
+          <div class="upi-head"><span class="upi-logo">UPI</span><div><b>Pay with a UPI app</b><small>Pick an amount. Your UPI app opens with it filled in.</small></div></div>
           <div class="upi-btns" id="upiBtns"></div>
           <code id="upiId" hidden></code>
         </div>
-        <div class="eyebrow">Amount to pay</div>
-        <div class="rates" id="rates"></div>
-        <div class="scan-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg><span>Tap a <b>Pay</b> button above or scan the QR code with any payment app. When you come back, mark your payment with your name.</span></div>
+        <div class="rates" id="rates" hidden></div>
+        <div class="scan-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg><span>Tap an amount or scan the QR code with any payment app. When you come back, confirm with your name.</span></div>
         <button class="btn linkish" id="qrPaidLink" hidden><span>Paid by scanning the QR code? <b>Mark your payment</b></span></button>
         <button class="btn go pay-cta" id="paidBtn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>I've paid</button>
         <p class="note" id="payNote" hidden></p>
@@ -610,8 +635,8 @@ main{padding-block:28px 120px;display:grid;gap:20px}
           <h2>Amount</h2>
           <p class="tile-sub">How much each person pays. Changing it updates everyone, except people you gave their own amount.</p>
           <label class="field" style="max-width:320px">Amount each person pays<div class="prefix"><input class="input num" type="number" min="1" step="1" id="amtEach" placeholder="e.g. 500"></div></label>
-          <h2 style="margin-top:8px">Pay buttons</h2>
-          <p class="tile-sub">These amounts show as <b>Pay</b> buttons that open the UPI app, and as choices when someone marks their payment. Leave empty to use the amount above.</p>
+          <h2 style="margin-top:8px">Payment options</h2>
+          <p class="tile-sub">Two amounts shown as <b>Pay</b> buttons on the team page, plus an <b>Other amount</b> button. Leave empty to show just the amount above.</p>
           <div class="row">
             <label class="field">Choice 1<div class="prefix"><input class="input num" type="number" min="0" step="1" id="ch1" placeholder="optional"></div></label>
             <label class="field">Choice 2<div class="prefix"><input class="input num" type="number" min="0" step="1" id="ch2" placeholder="optional"></div></label>
@@ -634,6 +659,8 @@ main{padding-block:28px 120px;display:grid;gap:20px}
           </label>
           <input type="file" id="cfgQr" accept="image/*" hidden>
           <p class="upi-status" id="upiStatus" hidden></p>
+          <label class="switch-row"><input type="checkbox" id="cfgShowList"><span class="switch" aria-hidden="true"></span>
+            <span><b>Show the people list on the team page</b><small>Off: team members only see the QR code and Pay buttons. Names, who paid and totals stay in the admin page.</small></span></label>
           <div class="row"><button class="btn go" id="saveCfg">Save &amp; continue →</button></div>
         </section>
       </div>
@@ -641,6 +668,13 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   </div>
 </main>
 
+<div class="pf" id="appPick" hidden role="dialog" aria-modal="true" aria-label="Choose your UPI app">
+  <div class="pf-card">
+    <div class="pf-top"><b class="pick-title" id="pickTitle">Pay with</b><button class="btn sm ghost" id="pickClose" aria-label="Close">✕</button></div>
+    <div class="pf-body"><p>Choose the UPI app you use.</p><div class="apps" id="apps"></div>
+      <p class="pf-hint">If nothing happens, that app isn't installed on this phone. Pick another one or scan the QR code.</p></div>
+  </div>
+</div>
 <div class="pf" id="pf" hidden role="dialog" aria-modal="true" aria-label="Mark your payment">
   <div class="pf-card">
     <div class="pf-top"><div class="pf-steps" aria-hidden="true"><i></i><i></i><i></i></div><button class="btn sm ghost" id="pfClose" aria-label="Close">✕</button></div>
@@ -884,8 +918,13 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   const isAdminPath = /\/admin\/?$/.test(location.pathname);
   const publicHref = isAdminPath ? location.pathname.replace(/admin\/?$/, "") : "#";
   function readRoute() { S.route = isAdminPath || location.hash === "#admin" ? "admin" : "public"; renderRoute(); }
+  function applyPrivacy() {
+    const priv = !S.cfg.showList;
+    document.body.classList.toggle("pub-private", priv);
+    $("bell").hidden = S.route !== "admin" && priv;
+  }
   function renderRoute() {
-    const admin = S.route === "admin";
+    const admin = S.route === "admin"; applyPrivacy();
     $("routePublic").hidden = admin; $("routeAdmin").hidden = !admin;
     $("toPublic").href = $("lockBack").href = publicHref;
     $("toPublic").hidden = !admin || !S.isAdmin; $("signOut").hidden = !admin || !S.isAdmin;
@@ -915,6 +954,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     const set = S.roles.filter(r => r.amount > 0);
     $("rates").innerHTML = set.length ? set.map(r => `<div class="rate"><span>Each person pays</span><b class="num">${inr(r.amount)}</b></div>`).join("")
       : `<div class="rate"><span>Amounts coming soon</span><b class="num">₹—</b></div>`;
+    applyPrivacy(); if (!typingIn("[data-panel=setup]")) $("cfgShowList").checked = !!c.showList;
     $("payNote").hidden = !c.note; $("payNote").textContent = c.note || "";
     const fromQr = S.qrUpi && S.qrUpi.src === c.qrUrl ? S.qrUpi : null;
     if (c.qrUrl && !c.upi && !fromQr && S.qrUpiTried !== c.qrUrl) { S.qrUpiTried = c.qrUrl; S.qrReading = true;
@@ -928,9 +968,10 @@ main{padding-block:28px 120px;display:grid;gap:20px}
       const link = am => { const q = new URLSearchParams(base || { pa: upi, pn });
         q.set("cu", "INR"); if (!q.get("tn")) q.set("tn", tn); if (am) q.set("am", String(am)); else q.delete("am");
         return "upi://pay?" + q.toString(); };
-      const amts = choicesOf(c).length ? choicesOf(c) : [...new Set(S.roles.map(r => r.amount).filter(v => v > 0))].sort((a, b) => a - b);
-      $("upiBtns").innerHTML = amts.map(v => `<a class="btn go" data-upi-amt="${v}" href="${esc(link(v))}">Pay ${inr(v)}</a>`).join("")
-        + `<a class="btn ${amts.length ? "ghost" : "go"}" data-upi-amt="0" href="${esc(link(0))}">${amts.length ? "Other amount" : "Open UPI app"}</a>`;
+      S.upiLink = link;
+      const amts = choicesOf(c).length ? choicesOf(c) : [...new Set(S.roles.map(r => r.amount).filter(v => v > 0))];
+      $("upiBtns").innerHTML = amts.map((v, k) => `<a class="btn go pay-amt" style="--k:${k}" data-upi-amt="${v}" href="${esc(link(v))}">Pay ${inr(v)}</a>`).join("")
+        + `<a class="btn ${amts.length ? "ghost other-amt" : "go pay-now"}" data-upi-amt="0" href="${esc(link(0))}">${amts.length ? "Other amount" : "Pay now"}</a>`;
       $("upiId").textContent = upi;
     }
 
@@ -1139,6 +1180,15 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     return list.map((p, k) => { const r = roleOf(p.role), left = Math.max(0, (+p.due || 0) - (+p.paid || 0));
       return `<button class="pf-name" style="--k:${Math.min(k, 10)}" data-pf-pid="${p.id}"><span class="pf-av" style="${avStyle(p.name)}">${esc(initials(p.name))}</span><span><b>${esc(p.name)}</b><small>${inr(left)} to pay</small></span></button>`; }).join("");
   }
+  function pfFound() {
+    const q = PF.q.trim();
+    if (q.length < 3) return `<p class="pf-hint">Type at least 3 letters of your name.</p>`;
+    if (PF.searching) return `<p class="pf-hint"><span class="spin"></span> Looking for your name…</p>`;
+    if (PF.found === null) return `<p class="pf-hint">Couldn't search right now. Check your connection and try again.</p>`;
+    if (!PF.found.length) return `<p class="pf-hint">No match. Check the spelling, or ask the organiser how your name was added.</p>`;
+    return PF.found.map((p, k) => { const left = Math.max(0, (+p.due || 0) - (+p.paid || 0));
+      return `<button class="pf-name" style="--k:${k}" data-pf-pid="${esc(p.id)}"><span class="pf-av" style="${avStyle(p.name)}">${esc(initials(p.name))}</span><span><b>${esc(p.name)}</b><small>${left ? inr(left) + " to pay" : "Already paid"}</small></span></button>`; }).join("");
+  }
   function renderPF() {
     $("pf").querySelectorAll(".pf-steps i").forEach((el, i) => el.classList.toggle("on", i < Math.min(PF.step, 3)));
     $("pf").querySelector(".pf-steps").style.visibility = PF.step > 3 ? "hidden" : "";
@@ -1148,15 +1198,20 @@ main{padding-block:28px 120px;display:grid;gap:20px}
       h = (PF.back ? `<div class="pf-back">👋 Welcome back! Let's record your payment.</div>` : "")
         + `<h3>How much did you pay?</h3><p>${who ? esc(who.name) + ", pick" : "Pick"} the amount you just paid.</p>`
         + (ch.length ? `<div class="choices">${ch.map((v, k) => `<button class="choice" style="--k:${k}" data-pf-amt="${v}"><b>${inr(v)}</b><small>Tap to choose</small></button>`).join("")}</div>`
+                     + `<form class="pf-other" id="pfOther"><label class="field">Other amount<div class="prefix"><input class="input num" type="number" min="1" step="1" inputmode="numeric" id="pfOtherAmt" placeholder="Enter amount"></div></label><button class="btn go" type="submit">Continue</button></form>`
                      : `<div class="empty-state" style="padding:20px">The organiser hasn't set the amounts yet.</div>`);
     } else if (PF.step === 2) {
       h = (PF.back ? `<div class="pf-back">👋 Welcome back! You paid <b>${inr(PF.amt)}</b> in your UPI app.</div>` : "")
-        + `<h3>Select your name</h3><p>${PF.back ? "Pick your name so everyone can see you've paid." : `You paid <b>${inr(PF.amt)}</b>. Find your name in the list.`}</p>
+        + (S.cfg.showList
+          ? `<h3>Select your name</h3><p>${PF.back ? "Pick your name so the organiser knows you've paid." : `You paid <b>${inr(PF.amt)}</b>. Find your name in the list.`}</p>
         <input class="input" type="search" id="pfSearch" placeholder="Search your name" value="${esc(PF.q)}" aria-label="Search your name">
-        <div class="pf-names" id="pfNames">${pfNames()}</div>
-        <button class="btn ghost sm" data-pf-back>← Change amount</button>`;
+        <div class="pf-names" id="pfNames">${pfNames()}</div>`
+          : `<h3>Type your name</h3><p>${PF.back ? "" : `You paid <b>${inr(PF.amt)}</b>. `}Type your name as the organiser added it, then tap it.</p>
+        <input class="input" type="search" id="pfSearch" placeholder="Your name" value="${esc(PF.q)}" aria-label="Your name" autocomplete="name">
+        <div class="pf-names" id="pfNames">${pfFound()}</div>`)
+        + `<button class="btn ghost sm" data-pf-back>← Change amount</button>`;
     } else if (PF.step === 3) {
-      const p = person(PF.pid); if (!p) { PF.step = 2; PF.pid = null; return renderPF(); }
+      const p = PF.person || person(PF.pid); if (!p) { PF.step = 2; PF.pid = null; return renderPF(); }
       const left = Math.max(0, (+p.due || 0) - (+p.paid || 0) - PF.amt);
       h = `<h3>Confirm your payment</h3>
         <div class="pf-sum"><span class="pf-av lg" style="${avStyle(p.name)}">${esc(initials(p.name))}</span><strong>${esc(p.name)}</strong><b>${inr(PF.amt)}</b>
@@ -1173,12 +1228,12 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   }
   function openPay(pid, opt = {}) {
     if (!S.db) return banner("The list isn't connected yet. Try again in a moment.", "err");
-    Object.assign(PF, { step: opt.amt ? 2 : 1, amt: opt.amt || 0, pid: pid || null, q: "", busy: false, back: !!opt.back });
+    Object.assign(PF, { step: opt.amt ? 2 : 1, amt: opt.amt || 0, pid: pid || null, q: "", busy: false, back: !!opt.back, person: null, found: [], searching: false });
     $("pf").hidden = false; document.body.style.overflow = "hidden"; renderPF();
   }
   function closePay() { if (PF.busy) return; $("pf").hidden = true; document.body.style.overflow = ""; }
   async function confirmPay() {
-    const p = person(PF.pid); if (!p || PF.busy) return;
+    const p = PF.person || person(PF.pid); if (!p || PF.busy) return;
     const btn = $("pfConfirm"); PF.busy = true; btn.disabled = true; btn.innerHTML = `<span class="spin"></span>Saving`;
     try {
       await S.db.selfPay(p.id, PF.amt); PF.busy = false; PF.step = 4; renderPF();
@@ -1190,8 +1245,33 @@ main{padding-block:28px 120px;display:grid;gap:20px}
 
   // Coming back from the UPI app: open the flow with the chosen amount.
   const UPI_KEY = "teamfund.upiPending";
+  // iPhone sends upi:// to a single app (often WhatsApp), so let people pick their app there.
+  const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const UPI_APPS = [
+    { n: "Google Pay", s: "tez://upi/pay?", c: "#1a73e8", t: "G" },
+    { n: "PhonePe", s: "phonepe://pay?", c: "#5f259f", t: "Pe" },
+    { n: "Paytm", s: "paytmmp://pay?", c: "#00baf2", t: "P" },
+    { n: "BHIM", s: "bhim://upi/pay?", c: "#f37021", t: "B" },
+    { n: "CRED", s: "credpay://upi/pay?", c: "#1b1b1b", t: "C" },
+    { n: "WhatsApp", s: "whatsapp://pay?", c: "#25d366", t: "W" },
+  ];
+  const markPending = amt => store.set(UPI_KEY, JSON.stringify({ amt: +amt || 0, at: Date.now() }));
+  function openAppPick(amt) {
+    const base = S.upiLink?.(amt); if (!base) return;
+    const qs = base.slice(base.indexOf("?") + 1);
+    $("pickTitle").textContent = amt ? `Pay ${inr(amt)} with` : "Pay with";
+    $("apps").innerHTML = UPI_APPS.map((a, k) => `<a class="app" style="--k:${k}" data-amt="${amt}" href="${esc(a.s + qs)}"><i style="background:${a.c}">${a.t}</i>${a.n}</a>`).join("")
+      + `<a class="app other" style="--k:${UPI_APPS.length}" data-amt="${amt}" href="${esc(base)}">Other UPI app</a>`;
+    $("appPick").hidden = false; document.body.style.overflow = "hidden";
+  }
+  function closeAppPick() { $("appPick").hidden = true; if ($("pf").hidden) document.body.style.overflow = ""; }
   $("upiBtns").addEventListener("click", e => { const a = e.target.closest("[data-upi-amt]"); if (!a) return;
-    store.set(UPI_KEY, JSON.stringify({ amt: +a.dataset.upiAmt || 0, at: Date.now() })); });
+    if (IS_IOS) { e.preventDefault(); return openAppPick(+a.dataset.upiAmt || 0); }
+    markPending(a.dataset.upiAmt); });
+  $("apps").addEventListener("click", e => { const a = e.target.closest(".app"); if (!a) return; markPending(a.dataset.amt); setTimeout(closeAppPick, 600); });
+  $("pickClose").addEventListener("click", closeAppPick);
+  $("appPick").addEventListener("click", e => { if (e.target === $("appPick")) closeAppPick(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("appPick").hidden) closeAppPick(); });
   function checkUpiReturn() {
     if (document.hidden || !S.peopleReady || S.route !== "public" || !$("pf").hidden) return;
     let pend = null; try { pend = JSON.parse(store.get(UPI_KEY) || "null"); } catch {}
@@ -1208,15 +1288,29 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   addEventListener("focus", () => setTimeout(checkUpiReturn, 400));
 
   $("pfClose").addEventListener("click", closePay);
+  $("pf").addEventListener("submit", e => { if (e.target.id !== "pfOther") return; e.preventDefault();
+    const v = Math.round(+$("pfOtherAmt").value || 0); if (v <= 0 || v > 1000000) { $("pfOtherAmt").focus(); return; }
+    PF.amt = v; PF.step = PF.pid ? 3 : 2; renderPF(); });
   $("pf").addEventListener("click", e => {
     if (e.target === $("pf")) return closePay();
     const a = e.target.closest("[data-pf-amt]"); if (a) { PF.amt = +a.dataset.pfAmt; PF.step = PF.pid ? 3 : 2; return renderPF(); }
-    const n = e.target.closest("[data-pf-pid]"); if (n) { PF.pid = n.dataset.pfPid; PF.step = 3; return renderPF(); }
-    if (e.target.closest("[data-pf-back]")) { if (PF.step === 3) { PF.step = 2; PF.pid = null; } else PF.step = 1; return renderPF(); }
+    const n = e.target.closest("[data-pf-pid]"); if (n) { PF.pid = n.dataset.pfPid; PF.person = (PF.found || []).find(x => x.id === PF.pid) || null; PF.step = 3; return renderPF(); }
+    if (e.target.closest("[data-pf-back]")) { if (PF.step === 3) { PF.step = 2; PF.pid = null; PF.person = null; } else PF.step = 1; return renderPF(); }
     if (e.target.closest("#pfOk")) return closePay();
     if (e.target.closest("#pfConfirm")) return confirmPay();
   });
-  $("pf").addEventListener("input", e => { if (e.target.id === "pfSearch") { PF.q = e.target.value; $("pfNames").innerHTML = pfNames(); } });
+  let findT = 0, findSeq = 0;
+  $("pf").addEventListener("input", e => { if (e.target.id !== "pfSearch") return; PF.q = e.target.value;
+    if (S.cfg.showList) { $("pfNames").innerHTML = pfNames(); return; }
+    clearTimeout(findT); const q = PF.q.trim(), seq = ++findSeq;
+    if (q.length < 3) { PF.found = []; PF.searching = false; $("pfNames").innerHTML = pfFound(); return; }
+    PF.searching = true; $("pfNames").innerHTML = pfFound();
+    findT = setTimeout(async () => {
+      try { const { data, error } = await sb.rpc("find_people", { q }); if (error) throw error;
+        if (seq !== findSeq) return; PF.found = (data || []).map(r => ({ id: r.id, name: r.name, due: r.due, paid: r.paid })); }
+      catch (err) { console.warn(err); if (seq === findSeq) PF.found = null; }
+      if (seq === findSeq) { PF.searching = false; $("pfNames").innerHTML = pfFound(); }
+    }, 280); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("pf").hidden) closePay(); });
 
   async function onListClick(ev) {
@@ -1353,7 +1447,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
       setUpiStatus(u ? u.pa : "", true, false); }); }
   function setUpiStatus(pa, hasQr, reading) {
     const el = $("upiStatus"); el.hidden = !hasQr; el.classList.toggle("warn", !reading && !pa);
-    el.textContent = reading ? "Reading your QR code…" : pa ? `✓ UPI app payment is ready. Pay buttons will open the payment app and pay to ${pa}.`
+    el.textContent = reading ? "Reading your QR code…" : pa ? `✓ UPI app payment is ready. the Pay buttons will open the payment app and pay to ${pa}.`
       : "This image isn't a UPI payment QR, so the Pay buttons can't open payment apps. People can still scan it.";
   }
   $("cfgQr").addEventListener("change", () => pickQr($("cfgQr").files[0]));
@@ -1364,7 +1458,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     try {
       const upi = $("cfgUpi").value.trim();
       if (upi && !UPI_RE.test(upi)) { $("cfgUpi").value = ""; }
-      const patch = { title: $("cfgTitle").value.trim(), note: $("cfgNote").value.trim(), upi: UPI_RE.test(upi) ? upi : "", upiName: $("cfgUpiName").value.trim() };
+      const patch = { showList: $("cfgShowList").checked, title: $("cfgTitle").value.trim(), note: $("cfgNote").value.trim(), upi: UPI_RE.test(upi) ? upi : "", upiName: $("cfgUpiName").value.trim() };
       if (S.pendingQrText) { patch.upiQr = S.pendingQrText; S.pendingQrText = null; }
       if (S.pendingQr) { const f = S.pendingQr, ext = ((f.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "")) || "png", path = `qr-${Date.now()}.${ext}`;
         const { error } = await sb.storage.from("qr").upload(path, f, { contentType: f.type, upsert: true }); if (error) throw error;
