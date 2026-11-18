@@ -241,7 +241,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
 .celebrate .av .tick{animation:pop .6s .15s var(--spring) both}
 .p-main{min-width:0;display:grid;gap:3px}
 .p-name{font-weight:600;font-size:15.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;overflow-wrap:anywhere}
-.tag{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:7px;background:var(--soft);color:var(--muted)}
+.tag{white-space:nowrap;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:7px;background:var(--soft);color:var(--muted)}
 .tag.lead{background:linear-gradient(135deg,#fff4dc,#ffe8b0);color:#a8670a}
 .p-sub{font-size:13px;color:var(--muted)}
 .mini{height:6px;border-radius:9px;background:#eef1f5;overflow:hidden;max-width:220px;margin-top:5px}
@@ -351,6 +351,37 @@ main{padding-block:28px 120px;display:grid;gap:20px}
 
 /* Entrances */
 @keyframes rise{from{opacity:0;transform:translateY(20px)}}
+/* Pay flow */
+.pay-cta{width:100%;padding:15px 18px;font-size:16px;border-radius:16px;animation:ctaGlow 2.6s ease-in-out infinite}
+.pay-cta svg{width:20px;height:20px}
+@keyframes ctaGlow{0%,100%{box-shadow:0 10px 24px -10px rgba(15,168,155,.8)}50%{box-shadow:0 10px 34px -6px rgba(15,168,155,.95),0 0 0 6px rgba(20,199,165,.15)}}
+.pf{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:rgba(17,24,39,.32);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:fade .25s}
+.pf-card{width:min(480px,100%);max-height:min(660px,calc(100dvh - 32px));display:grid;grid-template-rows:auto minmax(0,1fr);background:#fff;border-radius:26px;box-shadow:0 30px 80px -20px rgba(30,41,80,.45);animation:pfpop .5s var(--spring);overflow:hidden}
+@keyframes pfpop{from{opacity:0;transform:translateY(28px) scale(.95)}}
+.pf-top{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 4px}
+.pf-steps{display:flex;gap:6px}
+.pf-steps i{width:24px;height:6px;border-radius:9px;background:var(--line2);transition:width .35s var(--spring),background .3s}
+.pf-steps i.on{width:44px;background:var(--grad)}
+#pfBody{overflow:auto;min-height:0}
+.pf-body{padding:8px 22px 24px;display:grid;gap:14px;align-content:start;animation:rise .4s var(--ease)}
+.pf-body h3{font-size:22px;margin:0}
+.pf-body>p{margin:0;color:var(--muted)}
+.pf-names{display:grid;gap:8px}
+.pf-name{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border-radius:16px;border:2px solid var(--line);background:#fff;cursor:pointer;text-align:left;font:inherit;color:var(--ink);transition:border-color .2s,transform .25s var(--spring),box-shadow .25s;animation:rise .35s var(--ease) both;animation-delay:calc(var(--k,0)*40ms)}
+.pf-name:hover,.pf-name:focus-visible{border-color:var(--teal);transform:translateX(4px);box-shadow:0 10px 24px -14px rgba(15,168,155,.7);outline:none}
+.pf-name b{display:block;font-weight:700}
+.pf-name small{color:var(--muted);font-size:12.5px}
+.pf-av{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;flex:0 0 auto;font-family:var(--f-display);font-weight:700;font-size:14px}
+.pf-av.lg{width:68px;height:68px;border-radius:22px;font-size:24px;animation:pfpop .55s var(--spring)}
+.pf-sum{display:grid;gap:4px;justify-items:center;text-align:center;padding:20px;border-radius:20px;background:var(--soft)}
+.pf-sum strong{font-size:17px;margin-top:6px}
+.pf-sum b{font-family:var(--f-display);font-size:38px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pf-sum small{color:var(--muted);font-weight:600}
+.pf-done{display:grid;justify-items:center;text-align:center;gap:10px;padding:18px 6px 6px}
+.pf-tick{width:88px;height:88px;padding:20px;border-radius:50%;background:var(--grad);color:#fff;box-shadow:0 18px 40px -14px rgba(15,168,155,.8);animation:pfpop .55s var(--spring)}
+.pf-tick path{stroke-dasharray:30;stroke-dashoffset:30;animation:pfdraw .6s .3s var(--ease) forwards}
+@keyframes pfdraw{to{stroke-dashoffset:0}}
+.pf-done p{margin:0;color:var(--muted)}
 @keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
 @keyframes blurin{from{opacity:0;filter:blur(10px);transform:translateY(24px) scale(.98)}}
 .in{animation:blurin .9s var(--ease) both;animation-delay:calc(var(--d,0) * 90ms)}
@@ -408,7 +439,8 @@ main{padding-block:28px 120px;display:grid;gap:20px}
         </div></div>
         <div class="eyebrow">Amount to pay</div>
         <div class="rates" id="rates"></div>
-        <div class="scan-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg><span>Scan with any payment app and pay your amount. Then tap <b>I've paid</b> next to your name and the list updates for everyone.</span></div>
+        <div class="scan-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg><span>Scan with any payment app and pay. Then tap <b>I've paid</b> below, choose the amount and select your name.</span></div>
+        <button class="btn go pay-cta" id="paidBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>I've paid</button>
         <p class="note" id="payNote" hidden></p>
       </article>
 
@@ -446,7 +478,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
         <p class="login-err" id="loginErr" role="alert"></p>
         <button class="btn go" type="submit" id="loginBtn">Log in</button>
       </form>
-      <a class="lock-link" href="#">Back to the collection</a>
+      <a class="lock-link" id="lockBack" href="#">Back to the collection</a>
     </div>
 
     <div id="console" hidden style="display:grid;gap:18px">
@@ -486,7 +518,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
             <h2>Share &amp; remind</h2>
             <div class="share">
               <div class="share-row"><div><b>Team link</b><span>Share this page's link as it is. Members see the list and the QR code.</span></div></div>
-              <div class="share-row"><div><b>Your admin link</b><span>The same link with <code>#admin</code> at the end. Keep it for yourself.</span></div></div>
+              <div class="share-row"><div><b>Your admin link</b><span>The same link with <code>/admin</code> at the end. Keep it for yourself.</span></div></div>
               <div class="share-row"><div><b>Reminder for unpaid</b><span>Copies a message with names and amounts for WhatsApp.</span></div><button class="btn warm sm" id="copyReminder">Copy reminder</button></div>
             </div>
             <h2 style="margin-top:6px">Recent activity</h2>
@@ -562,6 +594,12 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   </div>
 </main>
 
+<div class="pf" id="pf" hidden role="dialog" aria-modal="true" aria-label="Mark your payment">
+  <div class="pf-card">
+    <div class="pf-top"><div class="pf-steps" aria-hidden="true"><i></i><i></i><i></i></div><button class="btn sm ghost" id="pfClose" aria-label="Close">✕</button></div>
+    <div id="pfBody"></div>
+  </div>
+</div>
 <div class="scrim" id="scrim" hidden></div>
 <aside class="sheet" id="sheet" hidden role="dialog" aria-label="Notifications">
   <div class="sheet-head"><h3>Notifications</h3><div><button class="btn sm ghost" id="clearFeed" hidden>Clear all</button><button class="btn sm ghost" id="closeSheet" aria-label="Close">✕</button></div></div>
@@ -766,10 +804,13 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   }
 
   /* ---------- routing ---------- */
-  function readRoute() { S.route = location.hash === "#admin" ? "admin" : "public"; renderRoute(); }
+  const isAdminPath = /\/admin\/?$/.test(location.pathname);
+  const publicHref = isAdminPath ? location.pathname.replace(/admin\/?$/, "") : "#";
+  function readRoute() { S.route = isAdminPath || location.hash === "#admin" ? "admin" : "public"; renderRoute(); }
   function renderRoute() {
     const admin = S.route === "admin";
     $("routePublic").hidden = admin; $("routeAdmin").hidden = !admin;
+    $("toPublic").href = $("lockBack").href = publicHref;
     $("toPublic").hidden = !admin || !S.isAdmin; $("signOut").hidden = !admin || !S.isAdmin;
     $("lock").hidden = !(admin && S.adminKnown && !S.isAdmin);
     $("console").hidden = !(admin && S.isAdmin);
@@ -867,7 +908,8 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     let act = "";
     if (S.busy[p.id]) act = busyBtn(p.id);
     else if (mode === "adm") {
-      act += s !== "paid" ? `<button class="btn sm ${s === "claimed" ? "warm" : "go"}" data-act="pay" data-id="${p.id}">${s === "claimed" ? "Confirm" : "Mark paid"}</button>`
+      const selfNew = p.selfMarked && !p.verified && +p.paid > 0;
+      act += s !== "paid" ? (selfNew ? `<button class="btn sm ghost" data-act="verify" data-id="${p.id}">Looks good</button>` : "") + `<button class="btn sm ${s === "claimed" ? "warm" : "go"}" data-act="pay" data-id="${p.id}">${s === "claimed" ? "Confirm" : "Mark paid"}</button>`
                           : (p.selfMarked && !p.verified ? `<button class="btn sm go" data-act="verify" data-id="${p.id}">Looks good</button>` : "") + `<button class="btn sm ghost" data-act="unpay" data-id="${p.id}">Undo</button>`;
       act += `<button class="btn sm ghost" data-act="edit" data-id="${p.id}">Edit</button>`;
       act += `<button class="btn sm ${S.armed === p.id ? "danger arm" : "ghost danger"}" data-act="del" data-id="${p.id}" aria-label="Remove ${esc(p.name)}">${S.armed === p.id ? "Remove?" : "✕"}</button>`;
@@ -888,7 +930,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     const fx = S.celebrate.has(p.id) ? " celebrate" : S.flash.has(p.id) ? " flash" : "";
     return `<div class="person st-${s}${fx}${enter ? " enter" : ""}" style="--i:${Math.min(idx, 12)}" data-id="${p.id}">
       <div class="av" style="${avStyle(p.name)}">${esc(initials(p.name))}${s === "paid" ? `<span class="tick">✓</span>` : ""}</div>
-      <div class="p-main"><div class="p-name">${esc(p.name)}${r ? `<span class="tag ${isLead(r) ? "lead" : ""}">${esc(r.name)}</span>` : ""}${mode === "adm" && p.custom ? `<span class="tag">Custom</span>` : ""}${mode === "adm" && s === "paid" && p.selfMarked && !p.verified ? `<span class="tag" style="background:var(--pink-soft)">Self-marked</span>` : ""}</div>
+      <div class="p-main"><div class="p-name">${esc(p.name)}${r ? `<span class="tag ${isLead(r) ? "lead" : ""}">${esc(r.name)}</span>` : ""}${mode === "adm" && p.custom ? `<span class="tag">Custom</span>` : ""}${mode === "adm" && p.selfMarked && !p.verified && +p.paid > 0 ? `<span class="tag" style="background:var(--pink-soft)">Self-marked</span>` : ""}</div>
         <div class="p-sub">${sub}</div>${paid > 0 && s !== "paid" ? `<div class="mini"><i style="width:${due ? Math.min(100, paid/due*100) : 0}%"></i></div>` : ""}</div>
       <div class="p-amt"><b class="num">${inr(due)}</b><span class="pill ${s}">${label[s]}</span></div>
       ${act ? `<div class="p-act">${act}</div>` : ""}${ex}</div>`;
@@ -907,7 +949,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   }
   function renderAttn() {
     if (!S.peopleReady) return;
-    const claims = S.people.filter(p => status(p) === "claimed" || (status(p) === "paid" && p.selfMarked && !p.verified));
+    const claims = S.people.filter(p => status(p) === "claimed" || (p.selfMarked && !p.verified && +p.paid > 0)).sort((a, b) => (b.paidAt || 0) - (a.paidAt || 0));
     $("attnList").innerHTML = claims.length ? claims.map((p, i) => personRow(p, i, "adm", false)).join("")
       : `<div class="empty-state" style="padding:28px 16px"><h3>All caught up</h3>No payments waiting for you.</div>`;
   }
@@ -915,6 +957,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     if (typingIn(".expand")) return;
     if (S.route === "public") renderList($("pubList"), S.pub, "pub");
     else if (S.isAdmin) { if (S.atab === "people") renderList($("admList"), S.adm, "adm"); if (S.atab === "overview") renderAttn(); }
+    if (!$("pf").hidden && PF.step === 2 && $("pfNames")) $("pfNames").innerHTML = pfNames();
     S.celebrate.clear(); S.flash.clear();
     const f = $("exAmt") || $("exName"); if (f) { f.focus(); f.select?.(); }
   }
@@ -983,13 +1026,83 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   $("scrim").addEventListener("click", () => openSheet(false));
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("sheet").hidden) openSheet(false); });
 
+
+  /* ---------- "I've paid" flow: amount → name → confirm ---------- */
+  const PF = { step: 1, amt: 0, pid: null, q: "", busy: false };
+  function pfChoices() { const ch = choicesOf(S.cfg); if (ch.length) return ch;
+    return [...new Set(S.roles.map(r => r.amount).filter(v => v > 0))].sort((a, b) => a - b); }
+  function pfNames() {
+    const q = PF.q.trim().toLowerCase();
+    const list = S.people.filter(p => status(p) !== "paid" && (!q || String(p.name).toLowerCase().includes(q))).sort((a, b) => String(a.name).localeCompare(b.name));
+    if (!list.length) return `<div class="empty-state" style="padding:20px">${!S.people.length ? "The organiser hasn't added anyone yet." : q ? "No name matches. Check the spelling." : "Everyone has already paid 🎉"}</div>`;
+    return list.map((p, k) => { const r = roleOf(p.role), left = Math.max(0, (+p.due || 0) - (+p.paid || 0));
+      return `<button class="pf-name" style="--k:${Math.min(k, 10)}" data-pf-pid="${p.id}"><span class="pf-av" style="${avStyle(p.name)}">${esc(initials(p.name))}</span><span><b>${esc(p.name)}</b><small>${r ? esc(r.name) + " · " : ""}${inr(left)} to pay</small></span></button>`; }).join("");
+  }
+  function renderPF() {
+    $("pf").querySelectorAll(".pf-steps i").forEach((el, i) => el.classList.toggle("on", i < Math.min(PF.step, 3)));
+    $("pf").querySelector(".pf-steps").style.visibility = PF.step > 3 ? "hidden" : "";
+    let h = "";
+    if (PF.step === 1) {
+      const ch = pfChoices(), who = PF.pid && person(PF.pid);
+      h = `<h3>How much did you pay?</h3><p>${who ? esc(who.name) + ", pick" : "Pick"} the amount you just paid using the QR code.</p>`
+        + (ch.length ? `<div class="choices">${ch.map((v, k) => `<button class="choice" style="--k:${k}" data-pf-amt="${v}"><b>${inr(v)}</b><small>Tap to choose</small></button>`).join("")}</div>`
+                     : `<div class="empty-state" style="padding:20px">The organiser hasn't set the amounts yet.</div>`);
+    } else if (PF.step === 2) {
+      h = `<h3>Select your name</h3><p>You paid <b>${inr(PF.amt)}</b>. Find your name in the list.</p>
+        <input class="input" type="search" id="pfSearch" placeholder="Search your name" value="${esc(PF.q)}" aria-label="Search your name">
+        <div class="pf-names" id="pfNames">${pfNames()}</div>
+        <button class="btn ghost sm" data-pf-back>← Change amount</button>`;
+    } else if (PF.step === 3) {
+      const p = person(PF.pid); if (!p) { PF.step = 2; PF.pid = null; return renderPF(); }
+      const left = Math.max(0, (+p.due || 0) - (+p.paid || 0) - PF.amt);
+      h = `<h3>Confirm your payment</h3>
+        <div class="pf-sum"><span class="pf-av lg" style="${avStyle(p.name)}">${esc(initials(p.name))}</span><strong>${esc(p.name)}</strong><b>${inr(PF.amt)}</b>
+          <small>${left ? inr(left) + " will still be left to pay" : "This completes your payment 🎉"}</small></div>
+        <button class="btn go" id="pfConfirm">Confirm payment</button>
+        <button class="btn ghost sm" data-pf-back>← Back</button>`;
+    } else {
+      h = `<div class="pf-done"><svg class="pf-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>
+        <h3>Thank you!</h3><p>Your payment is recorded. The organiser can see it now and the list has updated for everyone.</p>
+        <button class="btn go" id="pfOk" style="margin-top:6px">Done</button></div>`;
+    }
+    $("pfBody").innerHTML = `<div class="pf-body">${h}</div>`; $("pfBody").scrollTop = 0;
+    if (PF.step === 2 && matchMedia("(hover:hover)").matches) $("pfSearch")?.focus();
+  }
+  function openPay(pid) {
+    if (!S.db) return banner("The list isn't connected yet. Try again in a moment.", "err");
+    Object.assign(PF, { step: 1, amt: 0, pid: pid || null, q: "", busy: false });
+    $("pf").hidden = false; document.body.style.overflow = "hidden"; renderPF();
+  }
+  function closePay() { if (PF.busy) return; $("pf").hidden = true; document.body.style.overflow = ""; }
+  async function confirmPay() {
+    const p = person(PF.pid); if (!p || PF.busy) return;
+    const btn = $("pfConfirm"); PF.busy = true; btn.disabled = true; btn.innerHTML = `<span class="spin"></span>Saving`;
+    try {
+      await S.db.selfPay(p.id, PF.amt); PF.busy = false; PF.step = 4; renderPF();
+      requestAnimationFrame(() => burst($("pfBody").querySelector(".pf-tick"), 90, 1.1));
+    } catch (e) { PF.busy = false; btn.disabled = false; btn.textContent = "Confirm payment"; fail(e, "save your payment"); }
+  }
+  $("paidBtn").addEventListener("click", () => openPay(null));
+  $("pfClose").addEventListener("click", closePay);
+  $("pf").addEventListener("click", e => {
+    if (e.target === $("pf")) return closePay();
+    const a = e.target.closest("[data-pf-amt]"); if (a) { PF.amt = +a.dataset.pfAmt; PF.step = PF.pid ? 3 : 2; return renderPF(); }
+    const n = e.target.closest("[data-pf-pid]"); if (n) { PF.pid = n.dataset.pfPid; PF.step = 3; return renderPF(); }
+    if (e.target.closest("[data-pf-back]")) { if (PF.step === 3) { PF.step = 2; PF.pid = null; } else PF.step = 1; return renderPF(); }
+    if (e.target.closest("#pfOk")) return closePay();
+    if (e.target.closest("#pfConfirm")) return confirmPay();
+  });
+  $("pf").addEventListener("input", e => { if (e.target.id === "pfSearch") { PF.q = e.target.value; $("pfNames").innerHTML = pfNames(); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("pf").hidden) closePay(); });
+
   async function onListClick(ev) {
     const b = ev.target.closest("button[data-act]"); if (!b) return;
     const id = b.dataset.id, act = b.dataset.act, p = person(id);
     if (act !== "del") S.armed = null;
     if (act === "close") { S.open = null; return renderLists(); }
     if (!p) return;
-    if (act === "pay" || act === "edit" || act === "claim") { S.open = S.open?.id === id && S.open.mode === act ? null : { id, mode: act }; return renderLists(); }
+    if (act === "claim") return openPay(id);
+    if (act === "pay" || act === "edit") { S.open = S.open?.id === id && S.open.mode === act ? null : { id, mode: act }; return renderLists(); }
     const ref = S.db.doc("people/" + id);
     try {
       if (act === "paysave") {
@@ -1134,7 +1247,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
       catch (e) { console.warn(e); $("loginErr").textContent = "Couldn't reach the server. Check your connection."; }
       btn.disabled = false; btn.textContent = "Log in";
     });
-    $("signOut").addEventListener("click", async () => { try { await sb.auth.signOut(); } catch {} S.isAdmin = false; location.hash = ""; readRoute(); });
+    $("signOut").addEventListener("click", async () => { try { await sb.auth.signOut(); } catch {} S.isAdmin = false; if (isAdminPath) location.href = publicHref; else { location.hash = ""; readRoute(); } });
 
     const slow = setTimeout(() => banner("Can't reach the list yet. It will appear when the connection is back."), 10000);
     const onErr = e => { clearTimeout(slow); console.warn(e); $("liveText").textContent = "Disconnected"; $("live").classList.remove("on"); };

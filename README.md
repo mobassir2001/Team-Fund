@@ -1,7 +1,8 @@
 # Team Fund (free Supabase database)
 
 Files:
-- `index.html` — the whole app (team page + `#admin` page)
+- `index.html` — the whole app (team page at `/`, admin page at `/admin`)
+- `_redirects` — tells Netlify to serve the app at `/admin` too
 - `setup.sql` — one-time database setup
 
 ## Setup (about 10 minutes, all free)
@@ -17,7 +18,7 @@ Files:
 
 ## Links
 - Team page: `https://<your-site>.netlify.app`
-- Admin page: `https://<your-site>.netlify.app/#admin` (log in with the email/password from step 3)
+- Admin page: `https://<your-site>.netlify.app/admin` (log in with the email/password from step 3)
 
 ## Optional
 - Supabase → Authentication → Sign In / Providers: turn off **Allow new users to sign up**.
