@@ -91,8 +91,16 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .app.other{grid-column:1/-1;justify-content:center}
 .pf-other{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
 .pf-other .field{flex:1 1 180px}
-.save-qr{width:100%;white-space:normal;font-size:13px}
+.btn.save-qr{width:100%;white-space:normal!important;font-size:13px;height:auto;min-height:40px;line-height:1.35;text-align:center;overflow:visible}
+.save-qr span{white-space:normal;min-width:0;flex:0 1 auto}
 .save-qr svg{width:16px;height:16px;flex:0 0 auto}
+.upi-main{display:flex;gap:10px;align-items:center}
+.upi-idbox{flex:1;min-width:0;display:grid;gap:2px;padding:10px 14px;border-radius:14px;background:#fff;border:1.5px dashed var(--teal)}
+.upi-idbox small{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.upi-idbox code{font-family:var(--f-body);font-size:16px;font-weight:800;color:var(--ink);word-break:break-all}
+.upi-main .btn{flex:0 0 auto;padding-inline:18px}
+.upi-main .btn svg{width:18px;height:18px}
+.upi-main .btn.copied{background:linear-gradient(135deg,#12b886,#38d9a9)}
 .pay-steps{margin:0;padding:12px 14px 12px 32px;border-radius:14px;background:var(--soft);font-size:13.5px;line-height:1.55;display:grid;gap:4px}
 .pick-help{padding:12px 14px;border-radius:14px;background:var(--part-bg);color:#6b4a00;font-size:13px;line-height:1.5}
 .pf-hint{font-size:13px;color:var(--muted);margin:0}
@@ -511,14 +519,19 @@ main{padding-block:28px 120px;display:grid;gap:20px}
           <img id="qrImg" alt="Payment QR code" hidden>
         </div></div>
         <div class="upi" id="upiBox" hidden>
-          <div class="upi-head"><span class="upi-logo">UPI</span><div><b>Pay with a UPI app</b><small id="upiSub">Pick an amount. Your UPI app opens with it filled in.</small></div></div>
+          <div class="upi-head"><span class="upi-logo">UPI</span><div><b>Pay to UPI ID</b><small id="upiSub">Works in every UPI app, for any amount</small></div></div>
+          <div class="upi-main">
+            <div class="upi-idbox"><small>UPI ID</small><code id="upiId"></code></div>
+            <button class="btn go" id="upiCopy" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>Copy</span></button>
+          </div>
+          <ol class="pay-steps"><li><b>Copy</b> the UPI ID above.</li><li>Open any UPI app → tap <b>Pay to UPI ID</b> (or <b>To UPI ID / Pay contacts</b>) → <b>paste</b>.</li><li>Enter your amount and pay, then come back here and confirm with your name.</li></ol>
+          <div class="eyebrow" style="margin-top:2px">Or pick the amount and open your app</div>
           <div class="upi-btns" id="upiBtns"></div>
-          <code id="upiId" hidden></code>
-          <button class="btn sm ghost save-qr" id="saveQr" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0-4-4m4 4 4-4M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>Payment not going through? Save the QR code</button>
+          <button class="btn sm ghost save-qr" id="saveQr" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0-4-4m4 4 4-4M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg><span>Save the QR code to scan from your gallery</span></button>
           <p class="pf-hint" id="saveQrHelp" hidden>Saved. Open your UPI app → <b>Scan</b> → choose the photo from your gallery, then pay.</p>
         </div>
         <div class="rates" id="rates" hidden></div>
-        <div class="scan-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg><span>Tap an amount or scan the QR code with any payment app. When you come back, confirm with your name.</span></div>
+        <div class="scan-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg><span>Pay to the UPI ID above, or scan the QR code from another phone. When you come back, confirm with your name.</span></div>
         <button class="btn linkish" id="qrPaidLink" hidden><span>Paid by scanning the QR code? <b>Mark your payment</b></span></button>
         <button class="btn go pay-cta" id="paidBtn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>I've paid</button>
         <p class="note" id="payNote" hidden></p>
@@ -680,7 +693,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   <div class="pf-card">
     <div class="pf-top"><b class="pick-title" id="pickTitle">Pay with</b><button class="btn sm ghost" id="pickClose" aria-label="Close">✕</button></div>
     <div class="pf-body">
-      <ol class="pay-steps"><li>Tap your app below. It opens with the payment details.</li><li>Enter <b id="pickAmt2">your amount</b> and pay, then come back here.</li><li>If the app declines it: tap <b>Pay to UPI ID</b> in the app and <b>paste</b>. The UPI ID is already copied.</li></ol>
+      <ol class="pay-steps"><li>Tap your app below. <b>The UPI ID is copied</b> for you.</li><li>In the app tap <b>Pay to UPI ID</b> and <b>paste</b>.</li><li>Enter <b id="pickAmt2">your amount</b> and pay, then come back here.</li></ol>
       <div class="apps" id="apps"></div><span id="pickAmt" hidden></span>
       <p class="pf-hint">If nothing opens, that app isn't installed. Pick another one or use “Save the QR code”.</p></div>
   </div>
@@ -989,7 +1002,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
         return "upi://pay?" + parts.join("&");
       };
       S.upiSigned = signed; S.upiId = upi;
-      $("upiSub").textContent = "Pick an amount and choose your app. Enter the amount in the app and pay.";
+
       S.upiLink = link;
       const amts = choicesOf(c).length ? choicesOf(c) : [...new Set(S.roles.map(r => r.amount).filter(v => v > 0))];
       $("upiBtns").innerHTML = amts.map((v, k) => `<a class="btn go pay-amt" style="--k:${k}" data-upi-amt="${v}" href="${esc(link(v))}">Pay ${inr(v)}</a>`).join("")
@@ -1287,7 +1300,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   const markPending = amt => store.set(UPI_KEY, JSON.stringify({ amt: +amt || 0, at: Date.now() }));
   function openAppPick(amt) {
     if (!S.upiId) return;
-    const base = S.upiLink?.(0) || "", qs = base.includes("?") ? base.slice(base.indexOf("?") + 1) : "";
+    const qs = "";   // open the app normally; paying to the UPI ID inside the app is never declined
     $("pickTitle").textContent = amt ? `Pay ${inr(amt)} with` : "Pay with";
     $("pickAmt").textContent = amt ? inr(amt) : "the amount";
     $("pickAmt2").textContent = amt ? inr(amt) : "your amount";
@@ -1306,9 +1319,17 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   $("apps").addEventListener("click", async e => { const a = e.target.closest(".app"); if (!a) return; e.preventDefault();
     markPending(a.dataset.amt); const href = a.getAttribute("href");
     const ok = await copyText(S.upiId || "");
-    toast(`Opening ${a.dataset.name}`, ok ? "UPI ID copied too, in case you need Pay to UPI ID" : "Enter the amount and pay", "paid");
+    toast(ok ? `UPI ID copied · opening ${a.dataset.name}` : `Opening ${a.dataset.name}`, ok ? "Tap Pay to UPI ID and paste" : `Copy the UPI ID: ${S.upiId}`, "paid");
     setTimeout(() => { location.href = href; }, 500); setTimeout(closeAppPick, 1500); });
   $("pickClose").addEventListener("click", closeAppPick);
+  $("upiCopy").addEventListener("click", async () => {
+    const ok = await copyText(S.upiId || ""), b = $("upiCopy");
+    if (ok) { b.classList.add("copied"); b.querySelector("span").textContent = "Copied ✓"; markPending(0); burst(b, 24, .6);
+      toast("UPI ID copied", "Open your UPI app → Pay to UPI ID → paste", "paid");
+      setTimeout(() => { b.classList.remove("copied"); b.querySelector("span").textContent = "Copy"; }, 2500); }
+    else { const r = document.createRange(); r.selectNodeContents($("upiId")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      toast("Select and copy the UPI ID", "Long-press it and choose Copy", ""); }
+  });
   $("saveQr").addEventListener("click", async () => {
     const src = S.cfg.qrUrl; if (!src) return;
     const btn = $("saveQr"); btn.disabled = true;
