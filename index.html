@@ -69,8 +69,10 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .chip svg{width:16px;height:16px;flex:0 0 auto}
 .chip[hidden]{display:none!important}
 /* Private public page: only the pay card */
-body.pub-private #routePublic .hero,body.pub-private #routePublic .stat,body.pub-private #routePublic .ticker,body.pub-private #routePublic section.people{display:none!important}
-body.pub-private #routePublic .bento{grid-template-columns:minmax(0,1fr);grid-template-areas:"pay";max-width:560px;width:100%;margin:0 auto}
+#routePublic .hero,#routePublic .stat,#routePublic .ticker,body.pub-private #routePublic section.people{display:none!important}
+#routePublic .bento{grid-template-columns:minmax(0,1fr);grid-template-areas:"pay";max-width:560px;width:100%;margin:0 auto}
+#routePublic section.people{max-width:760px;width:100%;margin:0 auto}
+#pubMeta{display:none!important}
 .switch-row{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:16px;border:1px solid var(--line);background:#fff;cursor:pointer}
 .switch-row input{position:absolute;opacity:0;pointer-events:none}
 .switch{flex:0 0 auto;width:44px;height:26px;border-radius:99px;background:var(--line2);position:relative;transition:background .25s;margin-top:2px}
@@ -505,7 +507,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
           <img id="qrImg" alt="Payment QR code" hidden>
         </div></div>
         <div class="upi" id="upiBox" hidden>
-          <div class="upi-head"><span class="upi-logo">UPI</span><div><b>Pay with a UPI app</b><small>Pick an amount. Your UPI app opens with it filled in.</small></div></div>
+          <div class="upi-head"><span class="upi-logo">UPI</span><div><b>Pay with a UPI app</b><small id="upiSub">Pick an amount. Your UPI app opens with it filled in.</small></div></div>
           <div class="upi-btns" id="upiBtns"></div>
           <code id="upiId" hidden></code>
         </div>
@@ -660,7 +662,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
           <input type="file" id="cfgQr" accept="image/*" hidden>
           <p class="upi-status" id="upiStatus" hidden></p>
           <label class="switch-row"><input type="checkbox" id="cfgShowList"><span class="switch" aria-hidden="true"></span>
-            <span><b>Show the people list on the team page</b><small>Off: team members only see the QR code and Pay buttons. Names, who paid and totals stay in the admin page.</small></span></label>
+            <span><b>Show the people list on the team page</b><small>On: everyone sees the list of names with search and who has paid (no totals). Off: only you see it, in the admin page.</small></span></label>
           <div class="row"><button class="btn go" id="saveCfg">Save &amp; continue →</button></div>
         </section>
       </div>
@@ -782,7 +784,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   function parseUpi(text) {
     if (!text || !/^upi:\/\/pay\?/i.test(text)) return null;
     const params = new URLSearchParams(text.slice(text.indexOf("?") + 1)), pa = (params.get("pa") || "").trim();
-    return UPI_RE.test(pa) ? { pa, pn: params.get("pn") || "", params: Object.fromEntries(params) } : null;
+    return UPI_RE.test(pa) ? { pa, pn: params.get("pn") || "", params: Object.fromEntries(params), raw: text.trim() } : null;
   }
   async function readQr(src) {
     try {
@@ -962,12 +964,22 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     const upi = String(c.upi || fromQr?.pa || "").trim(), upiOk = UPI_RE.test(upi);
     S.hasUpi = upiOk; $("upiBox").hidden = !upiOk; renderPaidCta();
     if (upiOk) {
-      const pn = c.upiName || fromQr?.pn || c.title || "Team Fund", tn = c.title || "Team Fund";
-      const saved = parseUpi(c.upiQr);   // keep merchant fields from the QR (mc, tr…)
-      const base = saved && saved.pa === upi ? saved.params : !c.upi && fromQr ? fromQr.params : null;
-      const link = am => { const q = new URLSearchParams(base || { pa: upi, pn });
-        q.set("cu", "INR"); if (!q.get("tn")) q.set("tn", tn); if (am) q.set("am", String(am)); else q.delete("am");
-        return "upi://pay?" + q.toString(); };
+      const pn = c.upiName || fromQr?.pn || c.title || "Team Fund";
+      // Use the QR's own payment string exactly as printed (business QRs are signed; changing or
+      // re-encoding any field makes the UPI app reject it). Only add an amount when the QR isn't signed.
+      const saved = parseUpi(c.upiQr);
+      const raw = saved && saved.pa === upi ? saved.raw : !c.upi && fromQr ? fromQr.raw : null;
+      const signed = !!raw && /[?&]sign=/i.test(raw);
+      const link = am => {
+        if (raw) {
+          let r = "upi://pay?" + raw.slice(raw.indexOf("?") + 1);
+          if (am && !signed) r = /[?&]am=/i.test(r) ? r.replace(/([?&]am=)[^&]*/i, "$1" + am) : r + "&am=" + am;
+          return r;
+        }
+        return `upi://pay?pa=${upi}&pn=${encodeURIComponent(pn)}&cu=INR${am ? "&am=" + am : ""}`;
+      };
+      S.upiSigned = signed;
+      $("upiSub").textContent = signed ? "Pick an amount, then enter the same amount in your UPI app." : "Pick an amount. Your UPI app opens with it filled in.";
       S.upiLink = link;
       const amts = choicesOf(c).length ? choicesOf(c) : [...new Set(S.roles.map(r => r.amount).filter(v => v > 0))];
       $("upiBtns").innerHTML = amts.map((v, k) => `<a class="btn go pay-amt" style="--k:${k}" data-upi-amt="${v}" href="${esc(link(v))}">Pay ${inr(v)}</a>`).join("")
