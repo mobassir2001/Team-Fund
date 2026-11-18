@@ -1,0 +1,1184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Team Fund</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+/* Layout: light "money garden" — animated pastel mesh behind frosted white cards; one teal→gold gradient hero carries the total.
+   Public route = hero + QR card + four stat cards, update ticker, people list. #admin = separate console. Single light look by choice. */
+:root{
+  --bg:#f5f7fb; --card:rgba(255,255,255,.82); --card-solid:#ffffff; --soft:#f1f4f9; --line:rgba(17,24,39,.08); --line2:rgba(17,24,39,.14);
+  --ink:#111827; --ink2:#374151; --muted:#6b7280;
+  --teal:#0fa89b; --teal2:#14c7a5; --gold:#f5b331; --coral:#ff6b6b; --sky:#4f9dff; --rose:#ff5d8f;
+  --grad:linear-gradient(135deg,#0fa89b 0%,#14c7a5 45%,#f5b331 100%);
+  --grad-btn:linear-gradient(135deg,#0fa89b,#19c39c);
+  --mango:#f5b331; --pink-soft:#ffe4ec;
+  --paid:#0f9f6e; --paid-bg:#e3f8ef; --due:#e5484d; --due-bg:#ffe9ea; --part:#c27c0e; --part-bg:#fff4dc; --claim:#2f6fe0; --claim-bg:#e5efff;
+  --shadow:0 1px 2px rgba(17,24,39,.04),0 12px 40px -12px rgba(30,41,80,.18);
+  --shadow-lg:0 2px 4px rgba(17,24,39,.04),0 24px 60px -18px rgba(30,41,80,.28);
+  --f-display:"Sora","Segoe UI",system-ui,sans-serif;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1); --spring:cubic-bezier(.34,1.56,.64,1);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
+h1,h2,h3{margin:0;font-family:var(--f-display);font-weight:700;letter-spacing:-.025em;line-height:1.15;text-wrap:balance}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:3px solid rgba(15,168,155,.45);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.eyebrow{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* Animated mesh background */
+.aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:var(--bg)}
+.aurora i{position:absolute;border-radius:50%;filter:blur(80px);opacity:.55}
+.aurora i:nth-child(1){width:44vmax;height:44vmax;background:#9ff0dc;left:-14vmax;top:-16vmax;animation:m1 24s ease-in-out infinite alternate}
+.aurora i:nth-child(2){width:36vmax;height:36vmax;background:#ffe2a8;right:-10vmax;top:-6vmax;animation:m2 28s ease-in-out infinite alternate}
+.aurora i:nth-child(3){width:38vmax;height:38vmax;background:#ffc9d6;right:-12vmax;bottom:-18vmax;opacity:.45;animation:m3 30s ease-in-out infinite alternate}
+.aurora i:nth-child(4){width:34vmax;height:34vmax;background:#c4dcff;left:-10vmax;bottom:-14vmax;opacity:.5;animation:m2 26s ease-in-out infinite alternate-reverse}
+.aurora i:nth-child(5),.aurora i:nth-child(6){display:none}
+.aurora::after{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(17,24,39,.05) 1px,transparent 1px);background-size:24px 24px;mask-image:linear-gradient(to bottom,#000,transparent 60%);-webkit-mask-image:linear-gradient(to bottom,#000,transparent 60%)}
+@keyframes m1{to{transform:translate(16vmax,12vmax) scale(1.12)}}
+@keyframes m2{to{transform:translate(-14vmax,10vmax) scale(.92)}}
+@keyframes m3{to{transform:translate(-12vmax,-14vmax) scale(1.1)}}
+
+/* Top bar */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:rgba(255,255,255,.9)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:rgba(255,255,255,.7);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:12px;padding-block:12px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.logo{width:42px;height:42px;border-radius:14px;flex:0 0 auto;display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:20px;color:#fff;background:var(--grad);box-shadow:0 8px 20px -6px rgba(15,168,155,.6);transition:transform .5s var(--spring)}
+.brand:hover .logo{transform:rotate(-12deg) scale(1.08)}
+.brand-t{min-width:0}
+.brand-t b{display:block;font-family:var(--f-display);font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:600}
+.live i{width:7px;height:7px;border-radius:50%;background:#c3c8d2}
+.live.on i{background:#12b886;animation:ping 2s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(18,184,134,.6)}70%,100%{box-shadow:0 0 0 8px rgba(18,184,134,0)}}
+.top-actions{display:flex;align-items:center;gap:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:#fff;border:1px solid var(--line2);font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;box-shadow:var(--shadow);transition:transform .2s var(--spring)}
+.chip:hover{transform:translateY(-2px)}
+.icon-btn{position:relative;width:42px;height:42px;border-radius:14px;background:#fff;border:1px solid var(--line2);box-shadow:var(--shadow);display:grid;place-items:center;cursor:pointer;transition:transform .2s var(--spring);flex:0 0 auto}
+.icon-btn:hover{transform:translateY(-2px)}
+.icon-btn svg{width:20px;height:20px}
+.icon-btn.shake svg{animation:shake .9s;transform-origin:50% 8%}
+@keyframes shake{10%,90%{transform:rotate(-4deg)}20%,80%{transform:rotate(10deg)}30%,50%,70%{transform:rotate(-16deg)}40%,60%{transform:rotate(16deg)}}
+.badge{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:linear-gradient(135deg,var(--rose),var(--coral));color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;border:2px solid #fff;animation:pop .5s var(--spring)}
+
+main{padding-block:28px 120px;display:grid;gap:20px}
+
+/* Cards */
+.tile{position:relative;background:var(--card);backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);border:1px solid rgba(255,255,255,.9);border-radius:28px;padding:24px;box-shadow:var(--shadow);min-width:0;overflow:hidden}
+.tile h2{font-size:19px}
+.tilt{transform:perspective(1100px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .5s var(--ease),box-shadow .4s}
+.tilt:hover{box-shadow:var(--shadow-lg)}
+.glare{position:absolute;inset:0;pointer-events:none;background:radial-gradient(420px circle at var(--gx,50%) var(--gy,0%),rgba(255,255,255,.35),transparent 45%);opacity:0;transition:opacity .3s;z-index:1}
+.tilt:hover .glare{opacity:1}
+
+/* Bento */
+.bento{display:grid;gap:18px;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"hero hero pay" "s1 s2 pay" "s3 s4 pay"}
+.bento>.hero{grid-area:hero}.bento>.pay{grid-area:pay}
+.bento>.s1{grid-area:s1}.bento>.s2{grid-area:s2}.bento>.s3{grid-area:s3}.bento>.s4{grid-area:s4}
+@media (max-width:960px){.bento{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"hero hero" "pay pay" "s1 s2" "s3 s4"}}
+.bento.admin-b{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:"hero hero hero hero" "s1 s2 s3 s4"}
+@media (max-width:960px){.bento.admin-b{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"hero hero" "s1 s2" "s3 s4"}}
+
+/* Hero (gradient) */
+.hero{display:grid;gap:20px;align-content:space-between;min-height:260px;color:#fff;border:0;background:linear-gradient(125deg,#0b8f86,#13b9a0 35%,#3cc99a 55%,#f5b331 100%);background-size:220% 220%;animation:heroShift 14s ease-in-out infinite alternate;box-shadow:0 24px 60px -20px rgba(15,168,155,.55)}
+.hero.in{animation:blurin .9s var(--ease) both,heroShift 14s ease-in-out infinite alternate}
+@keyframes heroShift{0%{background-position:0% 50%}100%{background-position:100% 50%}}
+.admin-b .hero{min-height:0}
+.glow{position:absolute;right:-80px;top:-80px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.35),transparent 65%);pointer-events:none;animation:breathe 7s ease-in-out infinite}
+.hero::after{content:"₹";position:absolute;right:28px;bottom:-60px;font-family:var(--f-display);font-weight:800;font-size:240px;line-height:1;color:rgba(255,255,255,.1);pointer-events:none}
+@keyframes breathe{50%{transform:scale(1.18);opacity:.7}}
+.hero .eyebrow{color:rgba(255,255,255,.85)}
+.hero-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;position:relative;z-index:2}
+.amount{font-family:var(--f-display);font-weight:800;font-size:clamp(42px,7.5vw,76px);line-height:1.02;letter-spacing:-.04em;margin-top:10px;color:#fff;text-shadow:0 6px 30px rgba(0,0,0,.12)}
+.of{color:rgba(255,255,255,.85);font-weight:500;margin-top:6px}
+.of b{color:#fff;font-weight:700}
+.pct-badge{font-family:var(--f-display);font-weight:700;font-size:20px;padding:10px 16px;border-radius:18px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff}
+.admin-b .hero .pct-badge{color:#fff}
+.meter{position:relative;height:16px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden;z-index:2}
+.meter-fill{position:absolute;inset:0 auto 0 0;width:0;border-radius:99px;background:linear-gradient(90deg,#fff,#fff7dd);transition:width 1.6s var(--ease);overflow:hidden;box-shadow:0 0 20px rgba(255,255,255,.7)}
+.meter-fill::after{content:"";position:absolute;top:0;bottom:0;width:35%;background:linear-gradient(90deg,transparent,rgba(245,179,49,.55),transparent);animation:shine 2.4s var(--ease) infinite}
+.meter-fill::before{display:none}
+@keyframes shine{0%{left:-40%}70%,100%{left:110%}}
+.hero-foot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:relative;z-index:2}
+.hero-foot .muted{color:rgba(255,255,255,.9)!important}
+.stack{display:flex;align-items:center}
+.stack span{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:700;border:2.5px solid rgba(255,255,255,.9);margin-left:-9px;animation:pop .5s var(--spring) both;animation-delay:calc(var(--i) * 70ms + .5s)}
+.stack span:first-child{margin-left:0}
+
+/* Stat cards */
+.stat{display:grid;gap:16px;align-content:space-between;cursor:default;transition:transform .35s var(--spring),box-shadow .35s}
+.stat:hover{transform:translateY(-5px);box-shadow:var(--shadow-lg)}
+.stat::after{content:"";position:absolute;left:24px;right:24px;bottom:0;height:4px;border-radius:4px 4px 0 0;opacity:.9}
+.stat .ic{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;color:#fff;transition:transform .5s var(--spring)}
+.stat:hover .ic{transform:rotate(-10deg) scale(1.08)}
+.stat .ic svg{width:23px;height:23px}
+.stat b{display:block;font-family:var(--f-display);font-size:clamp(28px,6vw,38px);line-height:1;font-weight:700;letter-spacing:-.03em;overflow-wrap:anywhere}
+.stat>div{position:relative;z-index:1;min-width:0}
+.stat span{font-size:13.5px;color:var(--muted);font-weight:600}
+.stat.paid .ic{background:linear-gradient(135deg,#12b886,#38d9a9);box-shadow:0 8px 18px -6px rgba(18,184,134,.6)}
+.stat.due .ic{background:linear-gradient(135deg,#ff6b6b,#ff8fa3);box-shadow:0 8px 18px -6px rgba(255,107,107,.6)}
+.stat.claim .ic{background:linear-gradient(135deg,#4f9dff,#7cc4ff);box-shadow:0 8px 18px -6px rgba(79,157,255,.6)}
+.stat.left .ic{background:linear-gradient(135deg,#f5a524,#ffd166);box-shadow:0 8px 18px -6px rgba(245,165,36,.6)}
+.stat.paid::after{background:linear-gradient(90deg,#12b886,#38d9a9)}.stat.due::after{background:linear-gradient(90deg,#ff6b6b,#ff8fa3)}
+.stat.claim::after{background:linear-gradient(90deg,#4f9dff,#7cc4ff)}.stat.left::after{background:linear-gradient(90deg,#f5a524,#ffd166)}
+.stat.paid b{color:var(--paid)}.stat.due b{color:var(--due)}.stat.claim b{color:var(--claim)}.stat.left b{color:#c27c0e}
+.draw path,.draw circle{stroke-dasharray:60;stroke-dashoffset:60;animation:draw 1.2s var(--ease) forwards;animation-delay:.6s}
+@keyframes draw{to{stroke-dashoffset:0}}
+.spark{position:absolute;right:-40px;top:-40px;width:130px;height:130px;border-radius:50%;opacity:.16;pointer-events:none;transition:transform .6s var(--ease)}
+.stat:hover .spark{transform:scale(1.3)}
+.stat.paid .spark{background:#12b886}.stat.due .spark{background:#ff6b6b}.stat.claim .spark{background:#4f9dff}.stat.left .spark{background:#f5a524}
+
+/* Pay card */
+.pay{display:grid;gap:16px;align-content:start}
+.pay-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.pay-head .eyebrow{background:linear-gradient(135deg,#e3f8ef,#fff4dc);color:var(--paid);padding:4px 10px;border-radius:99px}
+.qr-frame{position:relative;padding:3px;border-radius:24px;background:conic-gradient(from var(--ang),#0fa89b,#f5b331,#ff6b6b,#4f9dff,#0fa89b);animation:spin 5s linear infinite;box-shadow:0 16px 40px -14px rgba(15,168,155,.5)}
+@property --ang{syntax:"<angle>";initial-value:0deg;inherits:false}
+@keyframes spin{to{--ang:360deg}}
+.qr-frame::before,.qr-frame::after{display:none}
+.qr{position:relative;aspect-ratio:1;width:100%;max-width:100%;border-radius:21px;background:#fff;display:grid;place-items:center;overflow:hidden;padding:14px}
+.qr img{width:100%;height:100%;object-fit:contain}
+.qr .empty{color:var(--muted);text-align:center;font-size:14px;display:grid;gap:10px;justify-items:center;padding:20px;font-weight:600}
+.qr .empty svg{width:46px;height:46px;opacity:.45}
+.qr.has::after{content:"";position:absolute;left:6%;right:6%;height:3px;top:6%;border-radius:3px;background:linear-gradient(90deg,transparent,#0fa89b,transparent);box-shadow:0 0 18px 3px rgba(15,168,155,.6);animation:scan 2.4s ease-in-out infinite alternate}
+@keyframes scan{to{top:93%}}
+.scan-hint{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:16px;background:var(--paid-bg);color:#0b6b4d;font-weight:500;font-size:13.5px}
+.scan-hint svg{width:20px;height:20px;flex:0 0 auto;margin-top:1px;animation:nudge 2.2s ease-in-out infinite}
+@keyframes nudge{50%{transform:translateY(-3px)}}
+.rates{display:grid;gap:10px}
+.rate{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;border-radius:18px;background:#fff;border:1px solid var(--line);box-shadow:0 1px 2px rgba(17,24,39,.04);transition:transform .3s var(--spring),box-shadow .3s}
+.rate:hover{transform:translateX(4px);box-shadow:var(--shadow)}
+.rate span{font-weight:600;display:flex;align-items:center;gap:10px}
+.rate span::before{content:"";width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,#4f9dff,#7cc4ff)}
+.rate:first-child span::before{background:linear-gradient(135deg,#f5a524,#ffd166);box-shadow:0 0 0 4px #fff4dc}
+.rate b{font-family:var(--f-display);font-size:20px;font-weight:700;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.note{margin:0;color:var(--muted);font-size:13.5px}
+
+/* Ticker */
+.ticker{position:relative;overflow:hidden;border-radius:18px;background:rgba(255,255,255,.75);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.9);box-shadow:var(--shadow);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.ticker-track{display:flex;gap:40px;width:max-content;padding:12px 18px;animation:marquee var(--dur,40s) linear infinite}
+.ticker:hover .ticker-track{animation-play-state:paused}
+.ticker-item{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;white-space:nowrap;color:var(--muted)}
+.ticker-item b{color:var(--ink);font-weight:600}
+.ticker-item i{width:8px;height:8px;border-radius:50%;background:#c3c8d2}
+.ticker-item i.paid{background:#12b886;box-shadow:0 0 0 4px var(--paid-bg)}.ticker-item i.add{background:#f5a524}.ticker-item i.claim{background:#4f9dff}.ticker-item i.remove{background:#ff6b6b}
+@keyframes marquee{to{transform:translateX(-50%)}}
+
+/* Controls */
+.btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:14px;border:1px solid var(--line2);background:#fff;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;text-decoration:none;box-shadow:0 1px 2px rgba(17,24,39,.06);transition:transform .2s var(--spring),box-shadow .25s,background .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.btn:active{transform:scale(.96)}
+.btn.go{background:var(--grad-btn);border-color:transparent;color:#fff;box-shadow:0 10px 24px -10px rgba(15,168,155,.8)}
+.btn.go:hover{box-shadow:0 14px 30px -10px rgba(15,168,155,.9)}
+.btn.warm{background:linear-gradient(135deg,#f5a524,#ffc94d);border-color:transparent;color:#3b2500;box-shadow:0 10px 24px -10px rgba(245,165,36,.8)}
+.btn.sm{padding:7px 13px;font-size:13px;border-radius:11px}
+.btn.ghost{background:transparent;border-color:transparent;box-shadow:none;color:var(--muted)}
+.btn.ghost:hover{background:var(--soft);color:var(--ink);box-shadow:none}
+.btn.danger{color:var(--due)}
+.btn.danger.arm{background:var(--due);color:#fff}
+.btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.btn.loading{opacity:1;background:var(--soft);color:var(--ink2)}
+.btn .spin{width:16px;height:16px;border-radius:50%;border:2.5px solid var(--teal);border-right-color:transparent;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.btn.done{background:linear-gradient(135deg,#12b886,#38d9a9);color:#fff;border-color:transparent;animation:pop .45s var(--spring)}
+.btn .chk{width:18px;height:18px}
+.btn .chk path{stroke-dasharray:24;stroke-dashoffset:24;animation:draw .5s .05s var(--ease) forwards}
+.rip{position:absolute;border-radius:50%;transform:scale(0);background:currentColor;opacity:.2;pointer-events:none;animation:rip .65s ease-out forwards}
+@keyframes rip{to{transform:scale(2.6);opacity:0}}
+.field{display:grid;gap:7px;font-size:13px;font-weight:600;color:var(--ink2);min-width:0}
+.input,.select{width:100%;min-width:0;padding:12px 14px;border-radius:14px;border:1px solid var(--line2);background:#fff;font-size:15px;font-weight:500;color:var(--ink);transition:border-color .2s,box-shadow .2s}
+.input::placeholder{color:#9ca3af}
+.input:focus,.select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 4px rgba(15,168,155,.15)}
+.select{appearance:none;cursor:pointer;padding-right:36px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 19px) 53%,calc(100% - 14px) 53%;background-size:5px 5px;background-repeat:no-repeat}
+.prefix{position:relative}
+.prefix::before{content:"₹";position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:600;pointer-events:none}
+.prefix .input{padding-left:30px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+.row>*{flex:1 1 150px;min-width:0}
+.row>.btn{flex:0 0 auto}
+
+/* Segmented tabs */
+.seg{position:relative;display:flex;gap:2px;padding:4px;border-radius:16px;background:var(--soft);border:1px solid var(--line);overflow-x:auto;max-width:100%;min-width:0;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg-ind{position:absolute;top:4px;bottom:4px;left:0;width:0;border-radius:12px;background:#fff;box-shadow:0 2px 8px -2px rgba(17,24,39,.15);transition:transform .45s var(--spring),width .45s var(--spring)}
+.seg button{position:relative;z-index:1;border:0;background:transparent;padding:8px 14px;border-radius:12px;font-weight:600;font-size:13.5px;color:var(--muted);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:7px;transition:color .25s}
+.seg button[aria-selected=true]{color:var(--ink)}
+.seg em{font-style:normal;font-size:11px;font-weight:700;min-width:20px;padding:1px 7px;border-radius:99px;background:#e5e7eb;color:var(--ink2);text-align:center;transition:background .3s,color .3s}
+.seg button[aria-selected=true] em{background:var(--grad-btn);color:#fff}
+
+/* People */
+.people{display:grid;gap:18px}
+.people-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.filters .seg{flex:0 1 auto}
+.filters .input{flex:1 1 180px;width:auto;padding-block:10px}
+.filters .select{flex:0 1 170px;width:auto;padding-block:10px}
+.list{display:grid;gap:10px}
+.person{position:relative;display:grid;grid-template-columns:48px minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:14px 16px;border-radius:20px;background:#fff;border:1px solid var(--line);box-shadow:0 1px 2px rgba(17,24,39,.04);transition:transform .35s var(--spring),box-shadow .35s,border-color .3s}
+.person:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:transparent}
+.person.st-paid{background:linear-gradient(90deg,#effbf5,#fff 55%)}
+.person.st-claimed{background:linear-gradient(90deg,#eef4ff,#fff 55%)}
+.person.enter{animation:rise .6s var(--ease) both;animation-delay:calc(var(--i,0) * 55ms)}
+.person.celebrate{animation:celebrate 1.5s var(--ease)}
+@keyframes celebrate{15%{transform:scale(1.025);box-shadow:0 0 0 3px #38d9a9,0 20px 40px -12px rgba(18,184,134,.5)}100%{box-shadow:0 0 0 0 transparent}}
+.person.flash{animation:flash 1.4s var(--ease)}
+@keyframes flash{0%{box-shadow:0 0 0 3px #ffd166}}
+.av{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:15px;position:relative;color:#fff}
+.av .tick{position:absolute;right:-5px;bottom:-5px;width:20px;height:20px;border-radius:50%;background:#12b886;color:#fff;display:grid;place-items:center;font-size:11px;font-weight:800;border:2px solid #fff}
+.celebrate .av .tick{animation:pop .6s .15s var(--spring) both}
+.p-main{min-width:0;display:grid;gap:3px}
+.p-name{font-weight:600;font-size:15.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;overflow-wrap:anywhere}
+.tag{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:7px;background:var(--soft);color:var(--muted)}
+.tag.lead{background:linear-gradient(135deg,#fff4dc,#ffe8b0);color:#a8670a}
+.p-sub{font-size:13px;color:var(--muted)}
+.mini{height:6px;border-radius:9px;background:#eef1f5;overflow:hidden;max-width:220px;margin-top:5px}
+.mini i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#f5a524,#12b886)}
+.p-amt{display:grid;gap:6px;justify-items:end;text-align:right}
+.p-amt b{font-family:var(--f-display);font-size:17px;font-weight:700}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.paid{background:var(--paid-bg);color:var(--paid)}
+.pill.pending{background:var(--due-bg);color:var(--due)}
+.pill.partial{background:var(--part-bg);color:var(--part)}
+.pill.claimed{background:var(--claim-bg);color:var(--claim)}
+.pill.claimed::before,.pill.pending::before{animation:blink 1.4s infinite}
+@keyframes blink{50%{opacity:.25}}
+.celebrate .pill,.flash .pill{animation:pop .55s var(--spring)}
+.p-act{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.expand{grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap;align-items:end;padding:14px;border-radius:16px;background:var(--soft);animation:rise .35s var(--ease)}
+.expand .field{flex:1 1 140px}
+.ask{flex:1 1 100%;font-weight:800;font-size:15px}
+.choices{flex:1 1 100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.choice{position:relative;overflow:hidden;display:grid;gap:2px;justify-items:center;padding:14px 12px;border-radius:16px;border:2px solid var(--line2);background:#fff;cursor:pointer;font:inherit;color:var(--ink);transition:transform .25s var(--spring),border-color .2s,box-shadow .25s;animation:rise .4s var(--ease) both;animation-delay:calc(var(--k,0)*80ms)}
+.choice b{font-family:Sora,Inter,sans-serif;font-size:22px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.choice small{font-size:12px;color:var(--muted);font-weight:600}
+.choice:hover,.choice:focus-visible{transform:translateY(-3px) scale(1.02);border-color:var(--teal);box-shadow:0 14px 30px -14px rgba(15,168,155,.7);outline:none}
+.choice:active{transform:scale(.97)}
+.choice.full::after{content:"Full amount";position:absolute;top:6px;right:-26px;transform:rotate(35deg);background:var(--gold);color:#fff;font-size:9px;font-weight:800;padding:2px 26px}
+@media (max-width:620px){
+  .person{grid-template-columns:44px minmax(0,1fr) auto;padding:12px;gap:10px 12px}
+  .av{width:44px;height:44px;border-radius:14px}
+  .p-act{grid-column:1/-1}
+  .p-act .btn{flex:1}
+  .p-act .btn.ghost,.p-act .btn.danger{flex:0 0 auto}
+}
+.empty-state{display:grid;justify-items:center;gap:8px;text-align:center;padding:40px 16px;border-radius:20px;border:1.5px dashed var(--line2);background:rgba(255,255,255,.6);color:var(--muted)}
+.empty-state h3{font-size:17px;color:var(--ink)}
+.orb{width:66px;height:66px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-family:var(--f-display);font-weight:800;color:#fff;font-size:28px;animation:float 3s ease-in-out infinite;box-shadow:0 16px 30px -10px rgba(15,168,155,.6)}
+@keyframes float{50%{transform:translateY(-8px) rotate(6deg)}}
+
+/* Admin console */
+.console-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.console-head>div:first-child{min-width:0}
+.console-head h1{font-size:clamp(26px,4vw,38px)}
+.console-head p{margin:6px 0 0;color:var(--muted)}
+.panel{display:grid;gap:18px}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+@media (max-width:900px){.two{grid-template-columns:minmax(0,1fr)}}
+.tile-sub{margin:-8px 0 0;color:var(--muted);font-size:14px}
+.tile.form{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-content:start}
+.roles{display:grid;gap:10px}
+.role-row{display:grid;grid-template-columns:minmax(0,1fr) 150px auto;gap:10px;align-items:center;animation:rise .4s var(--ease) both}
+.role-row small{grid-column:1/-1;margin:-4px 0 2px 4px;color:var(--muted);font-size:12px}
+@media (max-width:440px){.role-row{grid-template-columns:minmax(0,1fr) 112px auto}}
+.drop{display:flex;gap:16px;align-items:center;padding:16px;border-radius:18px;border:1.5px dashed var(--line2);background:rgba(255,255,255,.6);cursor:pointer;transition:border-color .2s,background .2s}
+.drop:hover,.drop.over{border-color:var(--teal);background:#effbf8}
+.drop .thumb{width:76px;height:76px;border-radius:14px;background:#fff;border:1px solid var(--line);display:grid;place-items:center;overflow:hidden;flex:0 0 auto;color:var(--muted)}
+.drop .thumb img{width:100%;height:100%;object-fit:contain}
+.share{display:grid;gap:10px}
+.share-row{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:16px;background:#fff;border:1px solid var(--line);flex-wrap:wrap}
+.share-row div{flex:1 1 180px;min-width:0}
+.share-row b{display:block;font-size:14px;font-weight:600}
+.share-row span{font-size:13px;color:var(--muted)}
+.share-row code{font-family:var(--f-body);font-weight:700;color:var(--teal);background:#e6f7f5;padding:1px 6px;border-radius:6px}
+.feed-list{display:grid;gap:4px;max-height:420px;overflow:auto}
+
+/* Lock */
+.lock{min-height:60vh;display:grid;place-content:center;justify-items:center;text-align:center;gap:14px;padding:30px 0}
+.lock svg{width:96px;height:96px}
+.lock .shackle{animation:shackle 2.4s var(--spring) infinite}
+@keyframes shackle{0%,60%,100%{transform:translateY(0)}70%{transform:translateY(-6px)}80%{transform:translateY(0)}}
+.lock p{color:var(--muted);max-width:42ch;margin:0}
+.login{display:grid;gap:12px;width:min(360px,100%);text-align:left;margin-top:6px}
+.login .btn{width:100%}
+.lock .login-err{color:#d64545;font-size:13px;font-weight:600;min-height:18px;margin:0}
+.lock-link{font-size:13px;color:var(--muted)}
+
+/* Sheet */
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(17,24,39,.25);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);animation:fade .25s}
+@keyframes fade{from{opacity:0}}
+.sheet{position:fixed;z-index:41;top:0;right:0;bottom:0;width:min(420px,100vw);background:rgba(255,255,255,.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-left:1px solid var(--line);display:grid;grid-template-rows:auto minmax(0,1fr);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px);animation:slidein .45s var(--ease);box-shadow:-30px 0 60px -20px rgba(30,41,80,.3)}
+@keyframes slidein{from{transform:translateX(100%)}}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line)}
+.sheet-head h3{font-size:18px}
+.feed{overflow:auto;padding:10px}
+.ev{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;padding:12px;border-radius:16px;animation:rise .45s var(--ease) both;animation-delay:calc(var(--i,0) * 40ms)}
+.ev.new{background:#fff8e6}
+.ev .k{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-weight:800;background:var(--soft);color:var(--muted)}
+.ev .k.paid{background:linear-gradient(135deg,#12b886,#38d9a9);color:#fff}.ev .k.add{background:linear-gradient(135deg,#f5a524,#ffd166);color:#fff}
+.ev .k.claim{background:linear-gradient(135deg,#4f9dff,#7cc4ff);color:#fff}.ev .k.remove{background:linear-gradient(135deg,#ff6b6b,#ff8fa3);color:#fff}
+.ev p{margin:0;font-weight:500;font-size:14px}
+.ev time{font-size:12px;color:var(--muted)}
+.none{padding:40px 16px;text-align:center;color:var(--muted)}
+
+/* Toasts & banner */
+.toasts{position:fixed;z-index:50;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:grid;gap:10px;width:min(400px,calc(100vw - 32px))}
+.toast{position:relative;overflow:hidden;display:grid;grid-template-columns:38px 1fr;gap:12px;align-items:center;padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);box-shadow:var(--shadow-lg);animation:toastin .5s var(--spring)}
+.toast .ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-weight:800;color:#fff;background:linear-gradient(135deg,#f5a524,#ffd166)}
+.toast .ic.paid{background:linear-gradient(135deg,#12b886,#38d9a9)}
+.toast b{font-size:14px;font-weight:600}
+.toast small{display:block;color:var(--muted);font-size:12.5px}
+.toast .timer{position:absolute;left:0;bottom:0;height:3px;background:var(--grad);animation:timer 4.5s linear forwards}
+.toast.out{animation:toastout .35s var(--ease) forwards}
+@keyframes toastin{from{opacity:0;transform:translateY(24px) scale(.94)}}
+@keyframes toastout{to{opacity:0;transform:translateY(16px) scale(.96)}}
+@keyframes timer{from{width:100%}to{width:0}}
+.banner{padding:14px 18px;border-radius:18px;background:rgba(255,248,230,.95);border:1px solid #ffe2a8;font-weight:500;font-size:14px;box-shadow:var(--shadow);animation:rise .4s var(--ease)}
+.banner[data-tone=err]{background:#fff0f0;border-color:#ffc9c9}
+
+/* Entrances */
+@keyframes rise{from{opacity:0;transform:translateY(20px)}}
+@keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes blurin{from{opacity:0;filter:blur(10px);transform:translateY(24px) scale(.98)}}
+.in{animation:blurin .9s var(--ease) both;animation-delay:calc(var(--d,0) * 90ms)}
+.confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.aurora i{display:none}}
+</style>
+</head>
+<body>
+
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">₹</div>
+      <div class="brand-t"><b id="title">Team Fund</b><span class="live" id="live"><i></i><span id="liveText">Connecting…</span></span></div>
+    </div>
+    <div class="top-actions">
+      <a class="chip" id="toPublic" href="#" hidden>Public page</a>
+      <button class="chip" id="signOut" hidden>Sign out</button>
+      <button class="icon-btn" id="bell" aria-label="Notifications" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span class="badge" id="bellCount" hidden>0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="banner" id="banner" hidden></div>
+
+  <!-- ================= PUBLIC ================= -->
+  <div id="routePublic" style="display:grid;gap:18px">
+    <section class="bento" aria-label="Summary">
+      <article class="tile hero tilt in" style="--d:0">
+        <span class="glow"></span><span class="glare"></span>
+        <div class="hero-top">
+          <div>
+            <div class="eyebrow" id="heroLabel">Total collected</div>
+            <div class="amount num" id="amt">₹0</div>
+            <div class="of num">of <b id="target">₹0</b> target</div>
+          </div>
+          <div class="pct-badge num" id="pct">0%</div>
+        </div>
+        <div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="meter"><div class="meter-fill" id="meterFill"></div></div>
+        <div class="hero-foot"><div class="stack" id="stack"></div><span class="muted num" id="heroFoot" style="font-weight:600;font-size:13.5px"></span></div>
+      </article>
+
+      <article class="tile pay tilt in" style="--d:1" aria-label="Pay here">
+        <span class="glare"></span>
+        <div class="pay-head"><h2>Scan &amp; pay</h2><span class="eyebrow">Any payment app</span></div>
+        <div class="qr-frame"><div class="qr" id="qrBox">
+          <div class="empty" id="qrEmpty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>QR code coming soon</div>
+          <img id="qrImg" alt="Payment QR code" hidden>
+        </div></div>
+        <div class="eyebrow">Amount to pay</div>
+        <div class="rates" id="rates"></div>
+        <div class="scan-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg><span>Scan with any payment app and pay your amount. Then tap <b>I've paid</b> next to your name and the list updates for everyone.</span></div>
+        <p class="note" id="payNote" hidden></p>
+      </article>
+
+      <article class="tile stat paid s1 in" style="--d:2"><span class="spark"></span><div class="ic"><svg class="draw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg></div><div><b class="num" id="sPaid">0</b><span>Paid</span></div></article>
+      <article class="tile stat due s2 in" style="--d:3"><span class="spark"></span><div class="ic"><svg class="draw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><b class="num" id="sDue">0</b><span>Not paid yet</span></div></article>
+      <article class="tile stat claim s3 in" style="--d:4"><span class="spark"></span><div class="ic"><svg class="draw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div><div><b class="num" id="sClaim">0</b><span>Waiting to confirm</span></div></article>
+      <article class="tile stat left s4 in" style="--d:5"><span class="spark"></span><div class="ic"><svg class="draw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h15a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/><path d="M3 7l12-4v4"/><circle cx="16.5" cy="13.5" r="1.2"/></svg></div><div><b class="num" id="sLeft">₹0</b><span>Still to collect</span></div></article>
+    </section>
+
+    <div class="ticker in" style="--d:6" id="ticker" hidden><div class="ticker-track" id="tickerTrack"></div></div>
+
+    <section class="tile people in" style="--d:7" aria-label="People">
+      <div class="people-head"><h2>Who has paid</h2><span class="muted num" id="pubMeta" style="font-weight:700"></span></div>
+      <div class="filters">
+        <div class="seg" role="tablist" id="pubTabs"><span class="seg-ind"></span>
+          <button role="tab" data-f="all" aria-selected="true">All<em data-c="all">0</em></button>
+          <button role="tab" data-f="pending" aria-selected="false">Not paid<em data-c="pending">0</em></button>
+          <button role="tab" data-f="paid" aria-selected="false">Paid<em data-c="paid">0</em></button>
+        </div>
+        <input class="input" type="search" id="pubSearch" placeholder="Find your name" aria-label="Find your name">
+      </div>
+      <div class="list" id="pubList"><div class="empty-state"><div class="orb">₹</div><h3>Loading the list…</h3></div></div>
+    </section>
+  </div>
+
+  <!-- ================= ADMIN ================= -->
+  <div id="routeAdmin" hidden style="display:grid;gap:18px">
+    <div class="lock" id="lock" hidden>
+      <svg viewBox="0 0 64 64" fill="none" stroke-width="4" stroke-linecap="round"><path class="shackle" d="M20 28v-8a12 12 0 0 1 24 0v8" stroke="#0fa89b"/><rect x="12" y="28" width="40" height="28" rx="8" fill="#e3f8ef" stroke="#0fa89b"/><circle cx="32" cy="42" r="3.5" fill="#0fa89b"/></svg>
+      <h1>Organiser login</h1>
+      <p>Only the organiser can manage this collection. Team members can pay and mark themselves on the main page.</p>
+      <form class="login" id="loginForm" autocomplete="on">
+        <label class="field">Email<input class="input" type="email" id="lEmail" required autocomplete="username"></label>
+        <label class="field">Password<input class="input" type="password" id="lPass" required autocomplete="current-password"></label>
+        <p class="login-err" id="loginErr" role="alert"></p>
+        <button class="btn go" type="submit" id="loginBtn">Log in</button>
+      </form>
+      <a class="lock-link" href="#">Back to the collection</a>
+    </div>
+
+    <div id="console" hidden style="display:grid;gap:18px">
+      <div class="console-head in">
+        <div><div class="eyebrow">Admin panel</div><h1 id="aTitle">Team Fund</h1><p>Manage amounts, people and payments. Your team uses the main link.</p></div>
+        <div class="seg" role="tablist" id="admTabs"><span class="seg-ind"></span>
+          <button role="tab" data-t="overview" aria-selected="true">Overview</button>
+          <button role="tab" data-t="people" aria-selected="false">People<em id="aPeopleCount">0</em></button>
+          <button role="tab" data-t="amounts" aria-selected="false">Amounts</button>
+          <button role="tab" data-t="setup" aria-selected="false">Payment setup</button>
+        </div>
+      </div>
+
+      <!-- Overview -->
+      <div class="panel" data-panel="overview">
+        <section class="bento admin-b">
+          <article class="tile hero">
+            <span class="glow"></span>
+            <div class="hero-top">
+              <div><div class="eyebrow">Total collected</div><div class="amount num" id="aAmt">₹0</div><div class="of num">of <b id="aTarget">₹0</b> target</div></div>
+              <div class="pct-badge num" id="aPct">0%</div>
+            </div>
+            <div class="meter"><div class="meter-fill" id="aMeter"></div></div>
+          </article>
+          <article class="tile stat paid s1"><span class="spark"></span><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg></div><div><b class="num" id="aPaid">0</b><span>Paid</span></div></article>
+          <article class="tile stat due s2"><span class="spark"></span><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><b class="num" id="aDue">0</b><span>Not paid yet</span></div></article>
+          <article class="tile stat claim s3"><span class="spark"></span><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div><div><b class="num" id="aClaim">0</b><span>Waiting to confirm</span></div></article>
+          <article class="tile stat left s4"><span class="spark"></span><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 7h15a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/><path d="M3 7l12-4v4"/></svg></div><div><b class="num" id="aLeft">₹0</b><span>Still to collect</span></div></article>
+        </section>
+        <div class="two">
+          <section class="tile form">
+            <h2>Needs your attention</h2>
+            <p class="tile-sub">People who marked themselves as paid. Check your bank app, then tap Looks good, or Undo if the money hasn't come.</p>
+            <div class="list" id="attnList"></div>
+          </section>
+          <section class="tile form">
+            <h2>Share &amp; remind</h2>
+            <div class="share">
+              <div class="share-row"><div><b>Team link</b><span>Share this page's link as it is. Members see the list and the QR code.</span></div></div>
+              <div class="share-row"><div><b>Your admin link</b><span>The same link with <code>#admin</code> at the end. Keep it for yourself.</span></div></div>
+              <div class="share-row"><div><b>Reminder for unpaid</b><span>Copies a message with names and amounts for WhatsApp.</span></div><button class="btn warm sm" id="copyReminder">Copy reminder</button></div>
+            </div>
+            <h2 style="margin-top:6px">Recent activity</h2>
+            <div class="feed-list" id="aFeed"></div>
+          </section>
+        </div>
+      </div>
+
+      <!-- People -->
+      <div class="panel" data-panel="people" hidden>
+        <section class="tile form">
+          <h2>Add people</h2>
+          <p class="tile-sub">Pick a role and the amount fills in. Type an amount only for someone who pays differently.</p>
+          <form id="addForm" class="row" autocomplete="off">
+            <label class="field" style="flex:2 1 200px">Name<input class="input" type="text" id="addName" placeholder="Rohan Mehta" maxlength="60" required></label>
+            <label class="field">Role<select class="select" id="addRole"></select></label>
+            <label class="field">Amount<div class="prefix"><input class="input num" type="number" id="addAmt" min="1" step="1"></div></label>
+            <button class="btn go" type="submit">Add person</button>
+          </form>
+          <label class="field">Add many at once · one name per line, all get the role above<textarea class="input" id="bulk" rows="3" style="resize:vertical" placeholder="Priya&#10;Arjun&#10;Kavya"></textarea></label>
+          <div class="row"><button class="btn" id="bulkAdd">Add all names</button></div>
+        </section>
+        <section class="tile people">
+          <div class="people-head"><h2>Everyone</h2><span class="muted num" id="admMeta" style="font-weight:700"></span></div>
+          <div class="filters">
+            <div class="seg" role="tablist" id="admFilter"><span class="seg-ind"></span>
+              <button role="tab" data-f="all" aria-selected="true">All<em data-c="all">0</em></button>
+              <button role="tab" data-f="pending" aria-selected="false">Not paid<em data-c="pending">0</em></button>
+              <button role="tab" data-f="claimed" aria-selected="false">To confirm<em data-c="claimed">0</em></button>
+              <button role="tab" data-f="paid" aria-selected="false">Paid<em data-c="paid">0</em></button>
+            </div>
+            <input class="input" type="search" id="admSearch" placeholder="Search name" aria-label="Search name">
+            <select class="select" id="admRole" aria-label="Filter by role"><option value="">All roles</option></select>
+          </div>
+          <div class="list" id="admList"></div>
+        </section>
+      </div>
+
+      <!-- Amounts -->
+      <div class="panel" data-panel="amounts" hidden>
+        <section class="tile form" style="max-width:720px">
+          <h2>Roles &amp; amounts</h2>
+          <p class="tile-sub">For example TL pays ₹1,000 and Team member pays ₹500. Changing an amount updates everyone in that role, except people with their own amount.</p>
+          <div class="roles" id="roleRows"></div>
+          <div class="row"><button class="btn" id="addRoleBtn">+ Add role</button><button class="btn go" id="saveRoles">Save amounts</button></div>
+        </section>
+        <section class="tile form" style="max-width:720px;margin-top:18px">
+          <h2>Payment choices</h2>
+          <p class="tile-sub">After paying, each person taps <b>I've paid</b> and picks one of these two amounts to say how much they paid. Leave both empty and they simply confirm their full amount.</p>
+          <div class="row">
+            <label class="field">Choice 1<div class="prefix"><input class="input num" type="number" min="0" step="1" id="ch1" placeholder="e.g. 500"></div></label>
+            <label class="field">Choice 2<div class="prefix"><input class="input num" type="number" min="0" step="1" id="ch2" placeholder="e.g. 1000"></div></label>
+            <button class="btn go" id="saveChoices">Save choices</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Setup -->
+      <div class="panel" data-panel="setup" hidden>
+        <section class="tile form" style="max-width:720px">
+          <h2>Payment setup</h2>
+          <label class="field">Collection name<input class="input" type="text" id="cfgTitle" placeholder="Team outing fund" maxlength="80"></label>
+          <label class="field">Note for payers<input class="input" type="text" id="cfgNote" placeholder="Pay by Friday · add your name in the payment note" maxlength="160"></label>
+          <label class="drop" for="cfgQr" id="drop">
+            <span class="thumb" id="qrThumb"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></span>
+            <span><b>Upload your QR code</b><br><span class="note" id="qrDropText">Tap or drop the QR image (PNG or JPG)</span></span>
+          </label>
+          <input type="file" id="cfgQr" accept="image/*" hidden>
+          <div class="row"><button class="btn go" id="saveCfg">Save setup</button></div>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="sheet" id="sheet" hidden role="dialog" aria-label="Notifications">
+  <div class="sheet-head"><h3>Notifications</h3><div><button class="btn sm ghost" id="clearFeed" hidden>Clear all</button><button class="btn sm ghost" id="closeSheet" aria-label="Close">✕</button></div></div>
+  <div class="feed" id="feed"></div>
+</aside>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const inr = n => "₹" + Math.round(Number(n) || 0).toLocaleString("en-IN");
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const initials = n => String(n).trim().split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() || "").join("") || "?";
+  const hue = s => { let h = 11; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+  const avStyle = n => { const h = hue(n); return `background:linear-gradient(135deg,hsl(${h} 80% 60%),hsl(${(h + 40) % 360} 85% 65%));color:#fff`; };
+  const fmtDate = t => { const d = new Date(t); return String(d.getDate()).padStart(2,"0") + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + d.getFullYear(); };
+  const ago = t => { if (!t) return ""; const s = (Date.now() - t) / 1000;
+    if (s < 60) return "just now"; if (s < 3600) return Math.floor(s/60) + " min ago"; if (s < 86400) return Math.floor(s/3600) + " h ago"; return fmtDate(t); };
+  const rid = () => "r" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  const store = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
+  const reduce = (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } })();
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  /* ---------- free database: Supabase ----------
+     Paste your project's values here (Supabase → Project Settings → API). Both are safe to be public. */
+  const SUPABASE_URL = "PASTE_YOUR_PROJECT_URL";
+  const SUPABASE_KEY = "PASTE_YOUR_ANON_PUBLIC_KEY";
+  const sb = /^https:\/\//.test(SUPABASE_URL) && SUPABASE_KEY.length > 30 && window.supabase
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+  // Small document-style layer over one "items" table (col, id, data jsonb) with live updates.
+  function makeDb(sb, onLive) {
+    const cache = {}, loading = {}, subs = [], J = v => JSON.stringify(v);
+    const snapDoc = (id, data) => ({ id, exists: data != null, data: () => data, metadata: { fromCache: false } });
+    const fire = col => subs.filter(x => x.col === col).forEach(x => x.run());
+    async function load(col) {
+      const { data, error } = await sb.from("items").select("id,data").eq("col", col);
+      if (error) throw error;
+      cache[col] = new Map(data.map(r => [r.id, r.data])); fire(col);
+    }
+    const apply = (col, id, data) => { if (!cache[col]) return; if (data == null) cache[col].delete(id); else cache[col].set(id, data); fire(col); };
+    function sub(col, docId, order, lim, cb, onErr) {
+      let last = null;
+      const x = { col, run() {
+        const m = cache[col]; if (!m) return;
+        if (docId) { const d = m.has(docId) ? m.get(docId) : null, k = J(d); if (k === last) return; last = k; return cb(snapDoc(docId, d)); }
+        let rows = [...m.entries()].map(([id, d]) => ({ id, d }));
+        if (order) rows.sort((a, b) => ((+a.d[order.f] || 0) - (+b.d[order.f] || 0)) * (order.dir === "desc" ? -1 : 1));
+        if (lim) rows = rows.slice(0, lim);
+        const now = new Map(rows.map(r => [r.id, J(r.d)])), prev = last || new Map(), changes = [];
+        for (const r of rows) { if (!prev.has(r.id)) changes.push({ type: "added", doc: snapDoc(r.id, r.d) });
+          else if (prev.get(r.id) !== now.get(r.id)) changes.push({ type: "modified", doc: snapDoc(r.id, r.d) }); }
+        for (const id of prev.keys()) if (!now.has(id)) changes.push({ type: "removed", doc: snapDoc(id, null) });
+        if (last && !changes.length) return; last = now;
+        cb({ docs: rows.map(r => snapDoc(r.id, r.d)), docChanges: () => changes, metadata: { fromCache: false } });
+      } };
+      subs.push(x);
+      if (cache[col]) x.run();
+      else if (!loading[col]) loading[col] = load(col).catch(e => { delete loading[col]; onErr?.(e); });
+      return () => subs.splice(subs.indexOf(x), 1);
+    }
+    const reloadAll = () => Object.keys(cache).forEach(c => load(c).catch(e => console.warn(e)));
+    let joined = false;
+    sb.channel("items-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "items" }, p => {
+        const r = p.eventType === "DELETE" ? p.old : p.new; if (!r || !r.col) return;
+        apply(r.col, r.id, p.eventType === "DELETE" ? null : r.data);
+      })
+      .subscribe(st => {
+        if (st === "SUBSCRIBED") { if (joined) reloadAll(); joined = true; onLive?.(true); }
+        else if (st === "CHANNEL_ERROR" || st === "TIMED_OUT" || st === "CLOSED") onLive?.(false);
+      });
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) reloadAll(); });
+    async function put(col, id, data) { const { error } = await sb.from("items").upsert({ col, id, data }); if (error) throw error; apply(col, id, data); }
+    const newId = () => (crypto.randomUUID ? crypto.randomUUID() : rid());
+    return {
+      doc(path) { const [col, id] = path.split("/"); return {
+        onSnapshot: (cb, onErr) => sub(col, id, null, 0, cb, onErr),
+        set: data => put(col, id, data),
+        async update(patch) {
+          let cur = cache[col]?.get(id);
+          if (!cur) { const { data, error } = await sb.from("items").select("data").eq("col", col).eq("id", id).maybeSingle();
+            if (error) throw error; if (!data) throw { code: "not_found" }; cur = data.data; }
+          return put(col, id, { ...cur, ...patch });
+        },
+        async delete() { const { error } = await sb.from("items").delete().eq("col", col).eq("id", id); if (error) throw error; apply(col, id, null); }
+      }; },
+      collection(col) { const q = { order: null, lim: 0,
+        orderBy(f, dir) { q.order = { f, dir }; return q; }, limit(n) { q.lim = n; return q; },
+        onSnapshot: (cb, onErr) => sub(col, null, q.order, q.lim, cb, onErr),
+        add: data => put(col, newId(), data) }; return q; },
+      async selfPay(id, amt) { const { data, error } = await sb.rpc("self_pay", { pid: id, amt }); if (error) throw error; if (data) apply("people", id, data); }
+    };
+  }
+
+  const S = {
+    db:null, isAdmin:false, adminKnown:false, canWrite:true, cfg:{}, roles:[], draftRoles:null, people:[], events:[],
+    route:"public", atab: store.get("chanda.atab") || "overview",
+    pub:{ filter:"all", q:"" }, adm:{ filter:"all", q:"", role:"" },
+    open:null, armed:null, busy:{}, pendingQr:null, celebrate:new Set(), flash:new Set(), enter:{ pub:true, adm:true },
+    feedReady:false, peopleReady:false, lastSeen:+(store.get("chanda.lastSeen") || 0)
+  };
+  S.lastSeenShown = S.lastSeen;
+
+  /* ---------- motion helpers ---------- */
+  function tween(el, to, fmt) {
+    if (!el) return; const from = el._v ?? 0; el._v = to; cancelAnimationFrame(el._raf);
+    if (reduce || from === to) { el.textContent = fmt(to); return; }
+    const t0 = performance.now(), d = 1300;
+    const step = now => { const k = Math.min(1, (now - t0) / d), e = 1 - Math.pow(1 - k, 4);
+      el.textContent = fmt(from + (to - from) * e); if (k < 1) el._raf = requestAnimationFrame(step); };
+    el._raf = requestAnimationFrame(step);
+  }
+  const cv = document.createElement("canvas"); cv.className = "confetti"; cv.setAttribute("aria-hidden","true"); document.body.append(cv);
+  let parts = [], running = false;
+  function confetti(x, y, n = 60, spread = 1) {
+    if (reduce) return;
+    const dpr = devicePixelRatio || 1, W = Math.round(innerWidth * dpr), H = Math.round(innerHeight * dpr);
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    const cols = ["#12b886", "#f5b331", "#4f9dff", "#ff6b6b", "#38d9a9", "#ffd166", "#ff8fa3"];
+    for (let i = 0; i < n; i++) {
+      const a = -Math.PI/2 + (Math.random() - .5) * Math.PI * spread, sp = 5 + Math.random() * 9;
+      parts.push({ x, y, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp, r: Math.random()*6, vr: (Math.random()-.5)*.4,
+        w: 6 + Math.random()*7, h: 3 + Math.random()*4, c: cols[i % cols.length], life: 0, kind: Math.random() < .25 ? 1 : Math.random() < .15 ? 2 : 0 });
+    }
+    if (!running) { running = true; requestAnimationFrame(tick); }
+  }
+  function tick() {
+    const ctx = cv.getContext("2d"), dpr = devicePixelRatio || 1;
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,innerWidth,innerHeight);
+    parts = parts.filter(p => p.life < 180 && p.y < innerHeight + 40);
+    for (const p of parts) {
+      p.life++; p.vy += .22; p.vx *= .985; p.x += p.vx + Math.sin(p.life/8)*.7; p.y += p.vy; p.r += p.vr;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.globalAlpha = Math.max(0, 1 - p.life/180); ctx.fillStyle = p.c;
+      if (p.kind === 1) { ctx.beginPath(); ctx.arc(0,0,p.h,0,7); ctx.fill(); }
+      else if (p.kind === 2) { ctx.font = "800 14px Manrope,sans-serif"; ctx.fillText("₹", -4, 5); }
+      else ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h * Math.abs(Math.cos(p.life/6)) + 1);
+      ctx.restore();
+    }
+    if (parts.length) requestAnimationFrame(tick); else { running = false; ctx.clearRect(0,0,innerWidth,innerHeight); }
+  }
+  function burst(el, n = 60, spread = 1) { if (!el) return; const r = el.getBoundingClientRect(); if (r.bottom > 0 && r.top < innerHeight) confetti(r.left + r.width/2, r.top + r.height/2, n, spread); }
+  function bigCelebration() { confetti(innerWidth/2, innerHeight*.4, 200, 2); setTimeout(() => confetti(innerWidth*.2, innerHeight*.6, 90, 1.1), 250); setTimeout(() => confetti(innerWidth*.8, innerHeight*.6, 90, 1.1), 450); }
+  function replay(el, cls) { if (!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+  function moveInd(seg) { if (!seg) return; const t = seg.querySelector('button[aria-selected="true"]'), ind = seg.querySelector(".seg-ind");
+    if (!t || !ind || !t.offsetWidth) return; ind.style.width = t.offsetWidth + "px"; ind.style.transform = `translateX(${t.offsetLeft}px)`; }
+  const moveAll = () => document.querySelectorAll(".seg").forEach(moveInd);
+  addEventListener("resize", moveAll);
+  try { document.fonts?.ready.then(moveAll); } catch {}
+
+  document.addEventListener("pointerdown", e => {
+    const b = e.target.closest(".btn"); if (!b || b.disabled || reduce) return;
+    const r = b.getBoundingClientRect(), size = Math.max(r.width, r.height), sp = document.createElement("span");
+    sp.className = "rip"; sp.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - r.left - size/2}px;top:${e.clientY - r.top - size/2}px`;
+    b.append(sp); setTimeout(() => sp.remove(), 700);
+  });
+  try {
+    if (!reduce && matchMedia("(pointer:fine)").matches) {
+      document.addEventListener("pointermove", e => {
+        const t = e.target.closest?.(".tilt");
+        document.querySelectorAll(".tilt").forEach(x => { if (x !== t) { x.style.setProperty("--rx","0deg"); x.style.setProperty("--ry","0deg"); } });
+        if (!t) return; const r = t.getBoundingClientRect(), px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+        t.style.setProperty("--ry", ((px - .5) * 5).toFixed(2) + "deg"); t.style.setProperty("--rx", ((.5 - py) * 5).toFixed(2) + "deg");
+        t.style.setProperty("--gx", (px*100).toFixed(1) + "%"); t.style.setProperty("--gy", (py*100).toFixed(1) + "%");
+      });
+    }
+  } catch {}
+
+  /* ---------- UI helpers ---------- */
+  function banner(msg, tone) { const b = $("banner"); b.textContent = msg || ""; b.dataset.tone = tone || ""; b.hidden = !msg; }
+  function toast(title, sub, kind) {
+    const el = document.createElement("div"); el.className = "toast";
+    el.innerHTML = `<span class="ic ${kind === "paid" ? "paid" : ""}">${kind === "paid" ? "✓" : "₹"}</span><div><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</div><span class="timer"></span>`;
+    $("toasts").prepend(el);
+    setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 360); }, 4500);
+    while ($("toasts").children.length > 3) $("toasts").lastChild.remove();
+  }
+  async function copy(text, okMsg) {
+    try { await navigator.clipboard.writeText(text); toast(okMsg || "Copied"); }
+    catch { const t = document.createElement("textarea"); t.value = text; document.body.append(t); t.select();
+      try { document.execCommand("copy"); toast(okMsg || "Copied"); } catch { toast("Select and copy the text manually"); } t.remove(); }
+  }
+  const typingIn = sel => document.activeElement?.closest?.(sel);
+
+  /* ---------- data helpers ---------- */
+  function rolesFromCfg(c) {
+    if (Array.isArray(c.roles) && c.roles.length) return c.roles.map(r => ({ id:String(r.id), name:String(r.name || "Role"), amount:Math.round(+r.amount || 0) }));
+    return [{ id:"lead", name:"TL", amount:0 }, { id:"member", name:"Team member", amount:Math.round(+c.amount || 0) }];
+  }
+  const choicesOf = c => (Array.isArray(c?.choices) ? c.choices : []).map(v => Math.round(+v || 0)).filter(v => v > 0).slice(0, 2);
+  const roleOf = id => S.roles.find(r => r.id === id);
+  const isLead = r => r && /\b(tl|lead|manager|head)\b/i.test(r.name);
+  const status = p => { const due = +p.due || 0, paid = +p.paid || 0;
+    if (due > 0 && paid >= due) return "paid"; if (p.claimed) return "claimed"; if (paid > 0) return "partial"; return "pending"; };
+  const label = { paid:"Paid", claimed:"Says paid", partial:"Part paid", pending:"Not paid" };
+  const person = id => S.people.find(p => p.id === id);
+  function totals() {
+    let target = 0, got = 0, paid = 0, due = 0, claim = 0;
+    for (const p of S.people) { target += +p.due || 0; got += Math.min(+p.paid || 0, +p.due || 0); const s = status(p);
+      if (s === "paid") paid++; else due++; if (s === "claimed") claim++; }
+    return { target, got, paid, due, claim, left: Math.max(0, target - got), pct: target ? Math.round(got / target * 100) : 0 };
+  }
+
+  /* ---------- routing ---------- */
+  function readRoute() { S.route = location.hash === "#admin" ? "admin" : "public"; renderRoute(); }
+  function renderRoute() {
+    const admin = S.route === "admin";
+    $("routePublic").hidden = admin; $("routeAdmin").hidden = !admin;
+    $("toPublic").hidden = !admin || !S.isAdmin; $("signOut").hidden = !admin || !S.isAdmin;
+    $("lock").hidden = !(admin && S.adminKnown && !S.isAdmin);
+    $("console").hidden = !(admin && S.isAdmin);
+    if (admin && S.isAdmin) renderTabs();
+    S.enter.pub = S.enter.adm = true;
+    renderLists(); scrollTo({ top: 0 });
+    requestAnimationFrame(moveAll);
+  }
+  addEventListener("hashchange", readRoute);
+
+  function renderTabs() {
+    for (const b of $("admTabs").querySelectorAll("button")) b.setAttribute("aria-selected", b.dataset.t === S.atab ? "true" : "false");
+    document.querySelectorAll("[data-panel]").forEach(p => { const on = p.dataset.panel === S.atab; if (on && p.hidden) { p.hidden = false; replay(p, "in"); } else if (!on) p.hidden = true; });
+    requestAnimationFrame(moveAll);
+  }
+  $("admTabs").addEventListener("click", e => { const b = e.target.closest("button[data-t]"); if (!b) return; S.atab = b.dataset.t; store.set("chanda.atab", S.atab); S.enter.adm = true; renderTabs(); renderLists(); });
+
+  /* ---------- render ---------- */
+  function renderConfig() {
+    const c = S.cfg, title = c.title || "Team Fund";
+    $("title").textContent = title; $("aTitle").textContent = title;
+    $("heroLabel").textContent = c.title ? `${c.title} · collected` : "Total collected";
+    const set = S.roles.filter(r => r.amount > 0);
+    $("rates").innerHTML = set.length ? set.map(r => `<div class="rate ${isLead(r) ? "lead" : ""}"><span>${esc(r.name)}</span><b class="num">${inr(r.amount)}</b></div>`).join("")
+      : `<div class="rate"><span>Amounts coming soon</span><b class="num">₹—</b></div>`;
+    $("payNote").hidden = !c.note; $("payNote").textContent = c.note || "";
+    if (c.qrUrl) { if ($("qrImg").getAttribute("src") !== c.qrUrl) $("qrImg").src = c.qrUrl; $("qrImg").hidden = false; $("qrEmpty").hidden = true; }
+    else { $("qrImg").hidden = true; $("qrEmpty").hidden = false; }
+    $("qrBox").classList.toggle("has", !!c.qrUrl);
+    const rf = $("admRole"), cur = rf.value;
+    rf.innerHTML = `<option value="">All roles</option>` + S.roles.map(r => `<option value="${esc(r.id)}">${esc(r.name)}</option>`).join("");
+    rf.value = S.roles.some(r => r.id === cur) ? cur : ""; S.adm.role = rf.value;
+    const ar = $("addRole"), acur = ar.value;
+    ar.innerHTML = S.roles.map(r => `<option value="${esc(r.id)}">${esc(r.name)}${r.amount ? " · " + inr(r.amount) : ""}</option>`).join("");
+    ar.value = S.roles.some(r => r.id === acur) ? acur : (S.roles.find(r => !isLead(r)) || S.roles[0] || {}).id || "";
+    if (!typingIn("#addAmt")) $("addAmt").placeholder = roleOf(ar.value)?.amount || "Amount";
+    if (!typingIn("[data-panel=setup]")) {
+      $("cfgTitle").value = c.title || ""; $("cfgNote").value = c.note || "";
+      if (c.qrUrl && !S.pendingQr) { $("qrThumb").innerHTML = `<img src="${esc(c.qrUrl)}" alt="">`; $("qrDropText").textContent = "Tap to replace your QR code"; }
+    }
+    if (!S.draftRoles && !typingIn("#roleRows")) renderRoleRows();
+    if (!typingIn("#ch1") && !typingIn("#ch2")) { const ch = choicesOf(c); $("ch1").value = ch[0] || ""; $("ch2").value = ch[1] || ""; }
+  }
+
+  function renderRoleRows() {
+    const roles = S.draftRoles || S.roles;
+    $("roleRows").innerHTML = roles.map((r, i) => { const n = S.people.filter(p => p.role === r.id).length;
+      return `<div class="role-row" data-i="${i}" style="animation-delay:${i*60}ms">
+        <input class="input" type="text" data-k="name" value="${esc(r.name)}" placeholder="Role name, e.g. TL" maxlength="40" aria-label="Role name">
+        <div class="prefix"><input class="input num" type="number" min="0" step="1" data-k="amount" value="${r.amount || ""}" placeholder="0" aria-label="Amount"></div>
+        <button class="btn sm ghost danger" data-del="${i}" aria-label="Remove role" ${n ? "disabled title=\"People are in this role\"" : ""}>✕</button>
+        <small>${n ? n + (n === 1 ? " person in this role" : " people in this role") : "No one in this role yet"}</small></div>`; }).join("");
+  }
+
+  function renderStats() {
+    const t = totals(), n = v => String(Math.round(v));
+    tween($("amt"), t.got, inr); $("target").textContent = inr(t.target); tween($("pct"), t.pct, v => Math.round(v) + "%");
+    tween($("sPaid"), t.paid, n); tween($("sDue"), t.due, n); tween($("sClaim"), t.claim, n); tween($("sLeft"), t.left, inr);
+    tween($("aAmt"), t.got, inr); $("aTarget").textContent = inr(t.target); tween($("aPct"), t.pct, v => Math.round(v) + "%");
+    tween($("aPaid"), t.paid, n); tween($("aDue"), t.due, n); tween($("aClaim"), t.claim, n); tween($("aLeft"), t.left, inr);
+    requestAnimationFrame(() => { $("meterFill").style.width = t.pct + "%"; $("aMeter").style.width = t.pct + "%"; });
+    $("meter").setAttribute("aria-valuenow", t.pct);
+    $("pubMeta").textContent = S.people.length ? `${t.paid} of ${S.people.length} paid` : "";
+    $("admMeta").textContent = $("pubMeta").textContent; $("aPeopleCount").textContent = S.people.length;
+    $("heroFoot").textContent = S.people.length ? `${t.paid} of ${S.people.length} people have paid` : "No one added yet";
+    const paidPeople = S.people.filter(p => status(p) === "paid").sort((a,b) => (b.paidAt||0) - (a.paidAt||0));
+    $("stack").innerHTML = paidPeople.slice(0, 5).map((p, i) => `<span style="--i:${i};${avStyle(p.name)}" title="${esc(p.name)}">${esc(initials(p.name))}</span>`).join("")
+      + (paidPeople.length > 5 ? `<span style="--i:5;background:var(--mango)">+${paidPeople.length - 5}</span>` : "");
+    const counts = { all: S.people.length, pending: t.due, claimed: t.claim, paid: t.paid };
+    document.querySelectorAll("em[data-c]").forEach(e => e.textContent = counts[e.dataset.c]);
+    requestAnimationFrame(moveAll);
+  }
+
+  function rowsFor(st, mode) {
+    const order = { claimed:0, pending:1, partial:2, paid:3 };
+    let rows = S.people.slice().sort((a,b) => order[status(a)] - order[status(b)] || String(a.name).localeCompare(b.name));
+    if (st.filter === "pending") rows = rows.filter(p => status(p) !== "paid");
+    else if (st.filter !== "all") rows = rows.filter(p => status(p) === st.filter);
+    if (mode === "adm" && st.role) rows = rows.filter(p => p.role === st.role);
+    if (st.q) rows = rows.filter(p => String(p.name).toLowerCase().includes(st.q));
+    return rows;
+  }
+
+  function busyBtn(id) {
+    const b = S.busy[id];
+    if (b === "loading") return `<button class="btn sm loading" disabled><span class="spin"></span>Saving</button>`;
+    if (b === "done") return `<button class="btn sm done"><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>Done</button>`;
+    return "";
+  }
+
+  function personRow(p, idx, mode, enter) {
+    const s = status(p), due = +p.due || 0, paid = +p.paid || 0, left = Math.max(0, due - paid), r = roleOf(p.role);
+    const sub = s === "paid" ? `Paid in full${p.paidAt ? " · " + ago(p.paidAt) : ""}` : paid > 0 ? `Paid ${inr(paid)} · ${inr(left)} left`
+      : s === "claimed" ? "Waiting for the organiser to confirm" : "Hasn't paid yet";
+    let act = "";
+    if (S.busy[p.id]) act = busyBtn(p.id);
+    else if (mode === "adm") {
+      act += s !== "paid" ? `<button class="btn sm ${s === "claimed" ? "warm" : "go"}" data-act="pay" data-id="${p.id}">${s === "claimed" ? "Confirm" : "Mark paid"}</button>`
+                          : (p.selfMarked && !p.verified ? `<button class="btn sm go" data-act="verify" data-id="${p.id}">Looks good</button>` : "") + `<button class="btn sm ghost" data-act="unpay" data-id="${p.id}">Undo</button>`;
+      act += `<button class="btn sm ghost" data-act="edit" data-id="${p.id}">Edit</button>`;
+      act += `<button class="btn sm ${S.armed === p.id ? "danger arm" : "ghost danger"}" data-act="del" data-id="${p.id}" aria-label="Remove ${esc(p.name)}">${S.armed === p.id ? "Remove?" : "✕"}</button>`;
+    } else if (S.canWrite && (s === "pending" || s === "partial")) act = `<button class="btn sm go" data-act="claim" data-id="${p.id}">I've paid</button>`;
+    let ex = "";
+    if (mode === "adm" && S.open?.id === p.id && S.open.mode === "pay") ex = `<div class="expand">
+        <label class="field">Amount received<div class="prefix"><input class="input num" type="number" id="exAmt" min="1" step="1" value="${left}"></div></label>
+        <button class="btn sm go" data-act="paysave" data-id="${p.id}">Save payment</button><button class="btn sm ghost" data-act="close">Cancel</button></div>`;
+    if (mode === "adm" && S.open?.id === p.id && S.open.mode === "edit") ex = `<div class="expand">
+        <label class="field">Name<input class="input" type="text" id="exName" value="${esc(p.name)}" maxlength="60"></label>
+        <label class="field">Role<select class="select" id="exRole">${S.roles.map(x => `<option value="${esc(x.id)}" ${x.id === p.role ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>
+        <label class="field">Amount to pay<div class="prefix"><input class="input num" type="number" id="exDue" min="1" step="1" value="${due}"></div></label>
+        <button class="btn sm go" data-act="editsave" data-id="${p.id}">Save</button><button class="btn sm ghost" data-act="close">Cancel</button></div>`;
+    if (mode === "pub" && S.open?.id === p.id && S.open.mode === "claim") { const ch = choicesOf(S.cfg);
+      ex = ch.length
+        ? `<div class="expand"><span class="ask">How much did you pay?</span><div class="choices">${ch.map((v, k) => `<button class="choice${v === left ? " full" : ""}" style="--k:${k}" data-act="claimsave" data-amt="${v}" data-id="${p.id}"><b>${inr(v)}</b><small>${v >= left ? "Fully paid" : inr(left - v) + " still left"}</small></button>`).join("")}</div><button class="btn sm ghost" data-act="close">Not yet</button></div>`
+        : `<div class="expand"><span style="flex:1 1 200px;font-weight:800">Did you pay ${inr(left)} by scanning the QR code?</span><button class="btn sm go" data-act="claimsave" data-id="${p.id}">Yes, I've paid</button><button class="btn sm ghost" data-act="close">Not yet</button></div>`; }
+    const fx = S.celebrate.has(p.id) ? " celebrate" : S.flash.has(p.id) ? " flash" : "";
+    return `<div class="person st-${s}${fx}${enter ? " enter" : ""}" style="--i:${Math.min(idx, 12)}" data-id="${p.id}">
+      <div class="av" style="${avStyle(p.name)}">${esc(initials(p.name))}${s === "paid" ? `<span class="tick">✓</span>` : ""}</div>
+      <div class="p-main"><div class="p-name">${esc(p.name)}${r ? `<span class="tag ${isLead(r) ? "lead" : ""}">${esc(r.name)}</span>` : ""}${mode === "adm" && p.custom ? `<span class="tag">Custom</span>` : ""}${mode === "adm" && s === "paid" && p.selfMarked && !p.verified ? `<span class="tag" style="background:var(--pink-soft)">Self-marked</span>` : ""}</div>
+        <div class="p-sub">${sub}</div>${paid > 0 && s !== "paid" ? `<div class="mini"><i style="width:${due ? Math.min(100, paid/due*100) : 0}%"></i></div>` : ""}</div>
+      <div class="p-amt"><b class="num">${inr(due)}</b><span class="pill ${s}">${label[s]}</span></div>
+      ${act ? `<div class="p-act">${act}</div>` : ""}${ex}</div>`;
+  }
+
+  function renderList(listEl, st, mode) {
+    if (!S.peopleReady) return;
+    if (!S.people.length) {
+      listEl.innerHTML = mode === "adm"
+        ? `<div class="empty-state"><div class="orb">₹</div><h3>No one added yet</h3>Add the people who have to pay using the form above.</div>`
+        : `<div class="empty-state"><div class="orb">₹</div><h3>The list is on its way</h3>The organiser will add names here. It updates by itself.</div>`;
+      return;
+    }
+    const rows = rowsFor(st, mode), enter = S.enter[mode] && !reduce; S.enter[mode] = false;
+    listEl.innerHTML = rows.length ? rows.map((p, i) => personRow(p, i, mode, enter)).join("") : `<div class="empty-state">No one matches this view.</div>`;
+  }
+  function renderAttn() {
+    if (!S.peopleReady) return;
+    const claims = S.people.filter(p => status(p) === "claimed" || (status(p) === "paid" && p.selfMarked && !p.verified));
+    $("attnList").innerHTML = claims.length ? claims.map((p, i) => personRow(p, i, "adm", false)).join("")
+      : `<div class="empty-state" style="padding:28px 16px"><h3>All caught up</h3>No payments waiting for you.</div>`;
+  }
+  function renderLists() {
+    if (typingIn(".expand")) return;
+    if (S.route === "public") renderList($("pubList"), S.pub, "pub");
+    else if (S.isAdmin) { if (S.atab === "people") renderList($("admList"), S.adm, "adm"); if (S.atab === "overview") renderAttn(); }
+    S.celebrate.clear(); S.flash.clear();
+    const f = $("exAmt") || $("exName"); if (f) { f.focus(); f.select?.(); }
+  }
+
+  function renderFeed() {
+    const unread = S.events.filter(e => (e.at || 0) > S.lastSeen).length;
+    $("bellCount").hidden = !unread || !$("sheet").hidden; $("bellCount").textContent = unread > 9 ? "9+" : unread;
+    $("clearFeed").hidden = !(S.isAdmin && S.events.length);
+    const icon = { paid:"✓", add:"+", claim:"₹", remove:"–", info:"•" };
+    const html = (list, mark) => list.length ? list.map((e, i) => `<div class="ev ${mark && (e.at || 0) > S.lastSeenShown ? "new" : ""}" style="--i:${Math.min(i,10)}"><span class="k ${esc(e.kind)}">${icon[e.kind] || "•"}</span><div><p>${esc(e.text)}</p><time>${ago(e.at)}</time></div></div>`).join("")
+      : `<div class="none">Payments and new people will show up here as they happen.</div>`;
+    if (!$("sheet").hidden) $("feed").innerHTML = html(S.events, true);
+    $("aFeed").innerHTML = html(S.events.slice(0, 8), false);
+    const items = S.events.slice(0, 10);
+    $("ticker").hidden = !items.length;
+    if (items.length) {
+      const one = items.map(e => `<span class="ticker-item"><i class="${esc(e.kind)}"></i><b>${esc(e.text)}</b><span>· ${ago(e.at)}</span></span>`).join("");
+      $("tickerTrack").innerHTML = one + one; $("tickerTrack").style.setProperty("--dur", Math.max(25, items.length * 7) + "s");
+    }
+  }
+  setInterval(renderFeed, 60000);
+
+  /* ---------- writes ---------- */
+  async function logEvent(kind, text) { try { await S.db.collection("activity").add({ kind, text, at: Date.now() }); } catch (e) { console.warn(e); } }
+  function fail(e, what) {
+    console.warn(e);
+    if (e?.code === "42501" || /row-level security|permission denied/i.test(e?.message || "")) banner("Only the organiser can do that. Log in on the admin page first.", "err");
+    else if (e?.code === "quota_exceeded") banner("Storage is full. Remove old people or clear notifications, then try again.", "err");
+    else banner(`Couldn't ${what}. Check your connection and try again.`, "err");
+  }
+  async function saveCfg(patch) { const next = { ...S.cfg, ...patch, updatedAt: Date.now() }; await S.db.doc("config/main").set(next); S.cfg = next; }
+  async function withBusy(id, fn) {
+    S.busy[id] = "loading"; renderLists();
+    try { await fn(); S.busy[id] = "done"; renderLists(); await sleep(1100); }
+    finally { delete S.busy[id]; renderLists(); }
+  }
+
+  async function addPeople(names, roleId, amt) {
+    const r = roleOf(roleId), custom = +amt > 0 && +amt !== (r?.amount || 0), due = Math.round(+amt || r?.amount || 0);
+    if (!due) { banner(`Set an amount for ${r ? r.name : "this role"} in Amounts first, or type an amount.`, "err"); return false; }
+    try {
+      for (const name of names) await S.db.collection("people").add({ name, role: roleId, due, custom, paid: 0, claimed: false, addedAt: Date.now() });
+      await logEvent("add", names.length === 1 ? `${names[0]} added${r ? " as " + r.name : ""} · pays ${inr(due)}` : `${names.length} ${r ? r.name : "people"} added · ${inr(due)} each`);
+      banner(""); toast(names.length === 1 ? `${names[0]} added` : `${names.length} people added`, `${inr(due)} each`, "paid"); return true;
+    } catch (e) { fail(e, "add people"); return false; }
+  }
+
+  /* ---------- events ---------- */
+  function wireSeg(seg, st, mode) {
+    seg.addEventListener("click", e => { const b = e.target.closest("button[data-f]"); if (!b) return;
+      st.filter = b.dataset.f; for (const x of seg.querySelectorAll("button")) x.setAttribute("aria-selected", x === b ? "true" : "false");
+      moveInd(seg); S.enter[mode] = true; renderLists(); });
+  }
+  wireSeg($("pubTabs"), S.pub, "pub"); wireSeg($("admFilter"), S.adm, "adm");
+  $("pubSearch").addEventListener("input", e => { S.pub.q = e.target.value.trim().toLowerCase(); renderLists(); });
+  $("admSearch").addEventListener("input", e => { S.adm.q = e.target.value.trim().toLowerCase(); renderLists(); });
+  $("admRole").addEventListener("change", e => { S.adm.role = e.target.value; S.enter.adm = true; renderLists(); });
+
+  function openSheet(open) {
+    $("sheet").hidden = !open; $("scrim").hidden = !open; $("bell").setAttribute("aria-expanded", String(open));
+    if (open) { S.lastSeenShown = S.lastSeen; S.lastSeen = Date.now(); store.set("chanda.lastSeen", String(S.lastSeen)); }
+    renderFeed();
+  }
+  $("bell").addEventListener("click", () => openSheet($("sheet").hidden));
+  $("closeSheet").addEventListener("click", () => openSheet(false));
+  $("scrim").addEventListener("click", () => openSheet(false));
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("sheet").hidden) openSheet(false); });
+
+  async function onListClick(ev) {
+    const b = ev.target.closest("button[data-act]"); if (!b) return;
+    const id = b.dataset.id, act = b.dataset.act, p = person(id);
+    if (act !== "del") S.armed = null;
+    if (act === "close") { S.open = null; return renderLists(); }
+    if (!p) return;
+    if (act === "pay" || act === "edit" || act === "claim") { S.open = S.open?.id === id && S.open.mode === act ? null : { id, mode: act }; return renderLists(); }
+    const ref = S.db.doc("people/" + id);
+    try {
+      if (act === "paysave") {
+        const amt = Math.round(+$("exAmt").value || 0); if (amt <= 0) return;
+        const total = (+p.paid || 0) + amt; S.open = null; document.activeElement?.blur?.();
+        await withBusy(id, async () => {
+          await ref.update({ paid: total, claimed: false, paidAt: Date.now(), selfMarked: false, verified: true });
+          await logEvent("paid", total >= p.due ? `${p.name} paid ${inr(amt)} · fully paid` : `${p.name} paid ${inr(amt)} · ${inr(p.due - total)} left`);
+        });
+      } else if (act === "editsave") {
+        const name = $("exName").value.trim() || p.name, role = $("exRole").value, due = Math.round(+$("exDue").value || 0);
+        if (due <= 0) return; const custom = due !== (roleOf(role)?.amount || 0); S.open = null; document.activeElement?.blur?.();
+        await withBusy(id, async () => {
+          await ref.update({ name, role, due, custom });
+          if (due !== p.due || role !== p.role) await logEvent("info", `${name} now pays ${inr(due)}${roleOf(role) ? " as " + roleOf(role).name : ""}`);
+        });
+      } else if (act === "unpay") {
+        await ref.update({ paid: 0, claimed: false, paidAt: null, selfMarked: false, verified: false }); await logEvent("info", `${p.name} set back to not paid`);
+      } else if (act === "claimsave") {
+        const due = +p.due || 0, before = +p.paid || 0, left = Math.max(0, due - before);
+        const amt = b.dataset.amt ? Math.round(+b.dataset.amt) : left; if (amt <= 0) return;
+        const total = before + amt, full = total >= due; S.open = null; document.activeElement?.blur?.();
+        await withBusy(id, () => S.db.selfPay(id, amt));
+        if (full) toast("You're marked as paid 🎉", `${inr(amt)} recorded. Everyone can see it now. Thank you!`, "paid");
+        else toast(`${inr(amt)} recorded`, `${inr(due - total)} still left to pay. Tap I've paid again after paying the rest.`, "paid");
+      } else if (act === "verify") {
+        await ref.update({ verified: true }); toast(`${p.name} checked`, "Payment looks good", "paid");
+      } else if (act === "del") {
+        if (S.armed !== id) { S.armed = id; renderLists(); setTimeout(() => { if (S.armed === id) { S.armed = null; renderLists(); } }, 3500); return; }
+        S.armed = null; await ref.delete(); await logEvent("remove", `${p.name} removed from the list`);
+      }
+    } catch (e) { fail(e, "update " + p.name); renderLists(); }
+  }
+  ["pubList","admList","attnList"].forEach(id => $(id).addEventListener("click", onListClick));
+  document.addEventListener("keydown", ev => {
+    const ex = ev.target.closest?.(".expand"); if (!ex) return;
+    if (ev.key === "Enter") { ev.preventDefault(); ex.querySelector(".btn.go")?.click(); }
+    if (ev.key === "Escape") { S.open = null; document.activeElement?.blur?.(); renderLists(); }
+  });
+
+  // Roles
+  const draft = () => (S.draftRoles = S.draftRoles || S.roles.map(r => ({ ...r })));
+  $("roleRows").addEventListener("input", e => { const row = e.target.closest(".role-row"); if (!row) return; const r = draft()[+row.dataset.i]; if (!r) return;
+    if (e.target.dataset.k === "name") r.name = e.target.value; else r.amount = Math.round(+e.target.value || 0); });
+  $("roleRows").addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (!b) return; draft().splice(+b.dataset.del, 1); renderRoleRows(); });
+  $("addRoleBtn").addEventListener("click", () => { draft().push({ id: rid(), name: "", amount: 0 }); renderRoleRows();
+    const ins = $("roleRows").querySelectorAll('input[data-k="name"]'); ins[ins.length - 1]?.focus(); });
+  $("saveRoles").addEventListener("click", async () => {
+    const list = (S.draftRoles || S.roles).map(r => ({ id: r.id, name: String(r.name).trim(), amount: Math.round(+r.amount || 0) })).filter(r => r.name);
+    if (!list.length) return banner("Add at least one role.", "err");
+    const btn = $("saveRoles"); btn.disabled = true; btn.innerHTML = `<span class="spin"></span>Saving`;
+    try {
+      const before = new Map(S.roles.map(r => [r.id, r])); await saveCfg({ roles: list }); let moved = 0;
+      for (const r of list) { const old = before.get(r.id); if (!old || old.amount === r.amount || !r.amount) continue;
+        for (const p of S.people.filter(p => p.role === r.id && !p.custom && (+p.due || 0) !== r.amount)) { await S.db.doc("people/" + p.id).update({ due: r.amount }); moved++; }
+        await logEvent("info", `${r.name} amount changed to ${inr(r.amount)}`); }
+      S.draftRoles = null; S.roles = list; document.activeElement?.blur?.(); renderConfig(); renderRoleRows(); renderLists(); banner("");
+      toast("Amounts saved", moved ? `${moved} ${moved === 1 ? "person" : "people"} moved to the new amount` : list.map(r => `${r.name} ${inr(r.amount)}`).join(" · "), "paid");
+      burst(btn, 40, .8);
+    } catch (e) { fail(e, "save the amounts"); }
+    btn.disabled = false; btn.textContent = "Save amounts";
+  });
+
+  // Payment choices
+  $("saveChoices").addEventListener("click", async () => {
+    const list = [$("ch1").value, $("ch2").value].map(v => Math.round(+v || 0)).filter(v => v > 0);
+    const btn = $("saveChoices"); btn.disabled = true; btn.innerHTML = `<span class="spin"></span>Saving`;
+    try {
+      await saveCfg({ choices: list }); document.activeElement?.blur?.(); renderConfig(); renderLists();
+      toast("Choices saved", list.length ? list.map(inr).join(" or ") : "People will confirm their full amount", "paid"); burst(btn, 40, .8);
+    } catch (e) { fail(e, "save the choices"); }
+    btn.disabled = false; btn.textContent = "Save choices";
+  });
+
+  // Add people
+  $("addRole").addEventListener("change", () => { $("addAmt").value = ""; $("addAmt").placeholder = roleOf($("addRole").value)?.amount || "Amount"; });
+  $("addForm").addEventListener("submit", async ev => { ev.preventDefault(); const name = $("addName").value.trim(); if (!name) return;
+    if (await addPeople([name], $("addRole").value, $("addAmt").value)) { $("addName").value = ""; $("addAmt").value = ""; $("addName").focus(); } });
+  $("bulkAdd").addEventListener("click", async () => {
+    const names = [...new Set($("bulk").value.split(/\n|,/).map(s => s.trim()).filter(Boolean))];
+    if (!names.length) return banner("Type some names in the box first, one per line.", "err");
+    $("bulkAdd").disabled = true; if (await addPeople(names.slice(0, 200), $("addRole").value, $("addAmt").value)) $("bulk").value = ""; $("bulkAdd").disabled = false;
+  });
+  $("copyReminder").addEventListener("click", () => {
+    const due = S.people.filter(p => status(p) !== "paid");
+    if (!due.length) return toast("Everyone has paid", "No reminder needed", "paid");
+    const lines = due.map(p => `• ${p.name}${roleOf(p.role) ? " (" + roleOf(p.role).name + ")" : ""}: ${inr((+p.due||0) - (+p.paid||0))}`).join("\n");
+    copy(`Reminder: ${S.cfg.title || "our collection"}\nStill pending:\n${lines}\n\nScan the QR on the collection page to pay.${S.cfg.note ? `\n${S.cfg.note}` : ""}`, "Reminder copied · paste it in WhatsApp");
+  });
+  $("clearFeed").addEventListener("click", async () => {
+    const b = $("clearFeed");
+    if (b.dataset.arm !== "1") { b.dataset.arm = "1"; b.textContent = "Tap again to clear"; setTimeout(() => { b.dataset.arm = ""; b.textContent = "Clear all"; }, 3000); return; }
+    b.dataset.arm = ""; b.textContent = "Clear all";
+    try { for (const e of S.events.slice()) await S.db.doc("activity/" + e.id).delete(); } catch (e) { fail(e, "clear notifications"); }
+  });
+
+  // Setup + QR
+  function pickQr(f) { if (!f || !f.type.startsWith("image/")) return; S.pendingQr = f; $("qrThumb").innerHTML = `<img src="${URL.createObjectURL(f)}" alt="">`; $("qrDropText").textContent = f.name + " · uploads when you save"; }
+  $("cfgQr").addEventListener("change", () => pickQr($("cfgQr").files[0]));
+  ["dragenter","dragover"].forEach(t => $("drop").addEventListener(t, e => { e.preventDefault(); $("drop").classList.add("over"); }));
+  ["dragleave","drop"].forEach(t => $("drop").addEventListener(t, e => { e.preventDefault(); $("drop").classList.remove("over"); if (t === "drop") pickQr(e.dataTransfer.files[0]); }));
+  $("saveCfg").addEventListener("click", async () => {
+    const btn = $("saveCfg"); btn.disabled = true; btn.innerHTML = `<span class="spin"></span>Saving`;
+    try {
+      const patch = { title: $("cfgTitle").value.trim(), note: $("cfgNote").value.trim(), roles: S.roles, upi: "" };
+      if (S.pendingQr) { const f = S.pendingQr, ext = ((f.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "")) || "png", path = `qr-${Date.now()}.${ext}`;
+        const { error } = await sb.storage.from("qr").upload(path, f, { contentType: f.type, upsert: true }); if (error) throw error;
+        patch.qrId = path; patch.qrUrl = sb.storage.from("qr").getPublicUrl(path).data.publicUrl; S.pendingQr = null; }
+      await saveCfg(patch); document.activeElement?.blur?.(); renderConfig(); toast("Setup saved", patch.title || "", "paid"); banner(""); burst(btn, 40, .8);
+    } catch (e) { fail(e, "save the setup"); }
+    btn.disabled = false; btn.textContent = "Save setup";
+  });
+
+  /* ---------- boot ---------- */
+  async function boot() {
+    S.roles = rolesFromCfg({}); renderConfig(); readRoute();
+    if (!sb) {
+      $("liveText").textContent = "Not connected"; S.peopleReady = true; S.adminKnown = true; renderRoute();
+      $("pubList").innerHTML = `<div class="empty-state"><div class="orb">₹</div><h3>Database not connected yet</h3>Add your Supabase Project URL and anon key at the top of the script in this file.</div>`;
+      return;
+    }
+    const db = makeDb(sb, on => { if (!on) { $("liveText").textContent = "Reconnecting…"; $("live").classList.remove("on"); }
+      else if (S.peopleReady) { $("liveText").textContent = "Live · updates instantly"; $("live").classList.add("on"); } });
+    S.db = db;
+
+    async function refreshAdmin() {
+      let ok = false;
+      try { const { data: { session } } = await sb.auth.getSession();
+        if (session) { const { data, error } = await sb.rpc("is_admin"); if (error) throw error; ok = !!data;
+          if (!ok) $("loginErr").textContent = "This account isn't an organiser for this collection."; } } catch (e) { console.warn(e); }
+      const changed = ok !== S.isAdmin || !S.adminKnown; S.isAdmin = ok; S.adminKnown = true;
+      if (changed) { renderRoute(); renderConfig(); renderStats(); }
+    }
+    await refreshAdmin();
+    sb.auth.onAuthStateChange(() => setTimeout(refreshAdmin, 0));
+    $("loginForm").addEventListener("submit", async ev => {
+      ev.preventDefault(); const btn = $("loginBtn"); $("loginErr").textContent = "";
+      btn.disabled = true; btn.innerHTML = `<span class="spin"></span>Logging in`;
+      try { const { error } = await sb.auth.signInWithPassword({ email: $("lEmail").value.trim(), password: $("lPass").value });
+        if (error) $("loginErr").textContent = /confirm/i.test(error.message) ? "Confirm your email first, then try again." : "Wrong email or password.";
+        else { $("lPass").value = ""; await refreshAdmin(); if (S.isAdmin) toast("Welcome back", "You're logged in as organiser", "paid"); } }
+      catch (e) { console.warn(e); $("loginErr").textContent = "Couldn't reach the server. Check your connection."; }
+      btn.disabled = false; btn.textContent = "Log in";
+    });
+    $("signOut").addEventListener("click", async () => { try { await sb.auth.signOut(); } catch {} S.isAdmin = false; location.hash = ""; readRoute(); });
+
+    const slow = setTimeout(() => banner("Can't reach the list yet. It will appear when the connection is back."), 10000);
+    const onErr = e => { clearTimeout(slow); console.warn(e); $("liveText").textContent = "Disconnected"; $("live").classList.remove("on"); };
+    let cfgSeen = false;
+
+    db.doc("config/main").onSnapshot(snap => {
+      S.cfg = snap.exists ? { ...snap.data() } : {}; S.roles = rolesFromCfg(S.cfg);
+      if (S.isAdmin && !snap.metadata.fromCache && !cfgSeen) { cfgSeen = true;
+        if (!(S.roles.some(r => r.amount > 0) && S.cfg.qrUrl))
+          { if (S.route === "admin") banner("Start here: set amounts for TL and team members, then upload your QR code in Payment setup."); } }
+      renderConfig(); renderLists();
+    }, onErr);
+
+    db.collection("people").onSnapshot(snap => {
+      if (!snap.metadata.fromCache) { clearTimeout(slow); $("liveText").textContent = "Live · updates instantly"; $("live").classList.add("on"); }
+      const was = S.peopleReady, prev = new Map(S.people.map(p => [p.id, status(p)])), before = totals();
+      if (was) for (const ch of snap.docChanges()) if (ch.type !== "removed") S.flash.add(ch.doc.id);
+      S.people = snap.docs.map(d => ({ id: d.id, ...d.data() })); S.peopleReady = true;
+      const newlyPaid = was ? S.people.filter(p => status(p) === "paid" && prev.has(p.id) && prev.get(p.id) !== "paid").map(p => p.id) : [];
+      newlyPaid.forEach(id => S.celebrate.add(id));
+      if (S.open && !person(S.open.id)) S.open = null;
+      renderStats(); renderLists();
+      if (S.isAdmin && !S.draftRoles && !typingIn("#roleRows")) renderRoleRows();
+      requestAnimationFrame(() => {
+        for (const id of newlyPaid) burst(document.querySelector(`.person[data-id="${id}"] .av`), 60, .9);
+        const after = totals();
+        if (was && after.target > 0 && before.pct < 100 && after.pct >= 100) { bigCelebration(); toast("Target reached! 🎉", `${inr(after.got)} collected from everyone`, "paid"); }
+      });
+    }, onErr);
+
+    db.collection("activity").orderBy("at", "desc").limit(50).onSnapshot(snap => {
+      if (S.feedReady && !snap.metadata.fromCache) {
+        for (const ch of snap.docChanges()) { if (ch.type !== "added") continue; const e = ch.doc.data();
+          if (e.at && Date.now() - e.at < 120000) {
+            setTimeout(() => replay($("bell"), "shake"), 30);
+            toast(e.kind === "paid" ? "Payment received" : e.kind === "claim" ? "Payment to confirm" : e.kind === "add" ? "New people added" : e.kind === "remove" ? "Removed" : "Update", e.text, e.kind === "paid" ? "paid" : "");
+          } }
+      }
+      if (!snap.metadata.fromCache) S.feedReady = true;
+      S.events = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderFeed();
+    }, onErr);
+  }
+  boot().catch(e => { console.warn(e); banner("Something went wrong while loading. Reload the page to try again.", "err"); });
+})();
+</script>
+</body>
+</html>
