@@ -680,7 +680,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   <div class="pf-card">
     <div class="pf-top"><b class="pick-title" id="pickTitle">Pay with</b><button class="btn sm ghost" id="pickClose" aria-label="Close">✕</button></div>
     <div class="pf-body">
-      <ol class="pay-steps"><li>Tap your app below. <b>The UPI ID is copied</b> for you.</li><li>In the app tap <b>Pay to UPI ID</b> (or <b>To UPI ID / Pay contacts</b>) and <b>paste</b>.</li><li>Pay <b id="pickAmt2">your amount</b>, then come back here.</li></ol>
+      <ol class="pay-steps"><li>Tap your app below. It opens with the payment details.</li><li>Enter <b id="pickAmt2">your amount</b> and pay, then come back here.</li><li>If the app declines it: tap <b>Pay to UPI ID</b> in the app and <b>paste</b>. The UPI ID is already copied.</li></ol>
       <div class="apps" id="apps"></div><span id="pickAmt" hidden></span>
       <p class="pf-hint">If nothing opens, that app isn't installed. Pick another one or use “Save the QR code”.</p></div>
   </div>
@@ -979,7 +979,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
       const raw = saved && saved.pa === upi ? saved.raw : !c.upi && fromQr ? fromQr.raw : null;
       const signed = !!raw && /[?&]sign=/i.test(raw);
       const link = am => {
-        if (raw && signed) return "upi://pay?" + raw.slice(raw.indexOf("?") + 1);   // signed business QR: use untouched
+        if (raw) return "upi://pay?" + raw.slice(raw.indexOf("?") + 1);   // exactly what the QR contains (like scanning it)
         // Build an app link (not a "scanned QR" payment): keep the payee fields from the QR, drop the
         // QR-only fields (mode, purpose, and mc=0000 for personal accounts) that make apps decline it.
         const parts = (raw ? raw.slice(raw.indexOf("?") + 1).split("&") : [`pa=${upi}`, `pn=${encodeURIComponent(pn)}`])
@@ -989,7 +989,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
         return "upi://pay?" + parts.join("&");
       };
       S.upiSigned = signed; S.upiId = upi;
-      $("upiSub").textContent = "Pick an amount, choose your app, then paste the UPI ID in the app and pay.";
+      $("upiSub").textContent = "Pick an amount and choose your app. Enter the amount in the app and pay.";
       S.upiLink = link;
       const amts = choicesOf(c).length ? choicesOf(c) : [...new Set(S.roles.map(r => r.amount).filter(v => v > 0))];
       $("upiBtns").innerHTML = amts.map((v, k) => `<a class="btn go pay-amt" style="--k:${k}" data-upi-amt="${v}" href="${esc(link(v))}">Pay ${inr(v)}</a>`).join("")
@@ -1272,24 +1272,26 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   const IS_ANDROID = /Android/i.test(navigator.userAgent);
   // s = iPhone link scheme, pkg = Android app package (opens that exact app)
   const UPI_APPS = [
-    { n: "Google Pay", ios: "tez://", pkg: "com.google.android.apps.nbu.paisa.user", c: "#1a73e8", t: "G" },
-    { n: "PhonePe", ios: "phonepe://", pkg: "com.phonepe.app", c: "#5f259f", t: "Pe" },
-    { n: "Paytm", ios: "paytmmp://", pkg: "net.one97.paytm", c: "#00baf2", t: "P" },
-    { n: "BHIM", ios: "bhim://", pkg: "in.org.npci.upiapp", c: "#f37021", t: "B" },
-    { n: "CRED", ios: "credpay://", pkg: "com.dreamplug.androidapp", c: "#1b1b1b", t: "C" },
-    { n: "Amazon Pay", ios: "amazonpay://", pkg: "in.amazon.mShop.android.shopping", c: "#ff9900", t: "a" },
-    { n: "WhatsApp", ios: "whatsapp://", pkg: "com.whatsapp", c: "#25d366", t: "W" },
-    { n: "Navi", ios: "navi://", pkg: "com.naviapp", c: "#2d3e8f", t: "N" },
+    { n: "Google Pay", ios: "tez://", s: "tez://upi/pay?", pkg: "com.google.android.apps.nbu.paisa.user", c: "#1a73e8", t: "G" },
+    { n: "PhonePe", ios: "phonepe://", s: "phonepe://pay?", pkg: "com.phonepe.app", c: "#5f259f", t: "Pe" },
+    { n: "Paytm", ios: "paytmmp://", s: "paytmmp://pay?", pkg: "net.one97.paytm", c: "#00baf2", t: "P" },
+    { n: "BHIM", ios: "bhim://", s: "bhim://upi/pay?", pkg: "in.org.npci.upiapp", c: "#f37021", t: "B" },
+    { n: "CRED", ios: "credpay://", s: "credpay://upi/pay?", pkg: "com.dreamplug.androidapp", c: "#1b1b1b", t: "C" },
+    { n: "Amazon Pay", ios: "amazonpay://", s: "amazonpay://upi/pay?", pkg: "in.amazon.mShop.android.shopping", c: "#ff9900", t: "a" },
+    { n: "WhatsApp", ios: "whatsapp://", s: "whatsapp://pay?", pkg: "com.whatsapp", c: "#25d366", t: "W" },
+    { n: "Navi", ios: "navi://", s: "navi://upi/pay?", pkg: "com.naviapp", c: "#2d3e8f", t: "N" },
   ];
   // Opens the app's home screen (no payment link, so personal-account payments aren't blocked)
-  const appHref = a => IS_ANDROID ? `intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=${a.pkg};end` : a.ios;
+  const appHref = (a, qs) => !qs ? (IS_ANDROID ? `intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=${a.pkg};end` : a.ios)
+    : IS_ANDROID ? `intent://pay?${qs}#Intent;scheme=upi;package=${a.pkg};end` : a.s + qs;
   const markPending = amt => store.set(UPI_KEY, JSON.stringify({ amt: +amt || 0, at: Date.now() }));
   function openAppPick(amt) {
     if (!S.upiId) return;
+    const base = S.upiLink?.(0) || "", qs = base.includes("?") ? base.slice(base.indexOf("?") + 1) : "";
     $("pickTitle").textContent = amt ? `Pay ${inr(amt)} with` : "Pay with";
     $("pickAmt").textContent = amt ? inr(amt) : "the amount";
     $("pickAmt2").textContent = amt ? inr(amt) : "your amount";
-    $("apps").innerHTML = UPI_APPS.map((a, k) => `<a class="app" style="--k:${k}" data-amt="${amt}" data-name="${esc(a.n)}" href="${esc(appHref(a))}"><i style="background:${a.c}">${a.t}</i>${a.n}</a>`).join("");
+    $("apps").innerHTML = UPI_APPS.map((a, k) => `<a class="app" style="--k:${k}" data-amt="${amt}" data-name="${esc(a.n)}" href="${esc(appHref(a, qs))}"><i style="background:${a.c}">${a.t}</i>${a.n}</a>`).join("");
     $("appPick").hidden = false; document.body.style.overflow = "hidden";
   }
   function closeAppPick() { $("appPick").hidden = true; if ($("pf").hidden) document.body.style.overflow = ""; }
@@ -1304,7 +1306,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   $("apps").addEventListener("click", async e => { const a = e.target.closest(".app"); if (!a) return; e.preventDefault();
     markPending(a.dataset.amt); const href = a.getAttribute("href");
     const ok = await copyText(S.upiId || "");
-    toast(ok ? "UPI ID copied" : "Couldn't copy automatically", ok ? `In ${a.dataset.name} tap Pay to UPI ID and paste` : "Use Save the QR code below instead", ok ? "paid" : "");
+    toast(`Opening ${a.dataset.name}`, ok ? "UPI ID copied too, in case you need Pay to UPI ID" : "Enter the amount and pay", "paid");
     setTimeout(() => { location.href = href; }, 500); setTimeout(closeAppPick, 1500); });
   $("pickClose").addEventListener("click", closeAppPick);
   $("saveQr").addEventListener("click", async () => {
