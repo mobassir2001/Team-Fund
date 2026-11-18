@@ -7,11 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" defer></script>
 <style>
 /* Layout: light "money garden" — animated pastel mesh behind frosted white cards; one teal→gold gradient hero carries the total.
    Public route = hero + QR card + four stat cards, update ticker, people list. #admin = separate console. Single light look by choice. */
 :root{
-  --bg:#f5f7fb; --card:rgba(255,255,255,.82); --card-solid:#ffffff; --soft:#f1f4f9; --line:rgba(17,24,39,.08); --line2:rgba(17,24,39,.14);
+  --bg:#f5f7fb; --card:rgba(255,255,255,.93); --card-solid:#ffffff; --soft:#f1f4f9; --line:rgba(17,24,39,.08); --line2:rgba(17,24,39,.14);
   --ink:#111827; --ink2:#374151; --muted:#6b7280;
   --teal:#0fa89b; --teal2:#14c7a5; --gold:#f5b331; --coral:#ff6b6b; --sky:#4f9dff; --rose:#ff5d8f;
   --grad:linear-gradient(135deg,#0fa89b 0%,#14c7a5 45%,#f5b331 100%);
@@ -40,11 +41,11 @@ a{color:inherit}
 
 /* Animated mesh background */
 .aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:var(--bg)}
-.aurora i{position:absolute;border-radius:50%;filter:blur(80px);opacity:.55}
-.aurora i:nth-child(1){width:44vmax;height:44vmax;background:#9ff0dc;left:-14vmax;top:-16vmax;animation:m1 24s ease-in-out infinite alternate}
-.aurora i:nth-child(2){width:36vmax;height:36vmax;background:#ffe2a8;right:-10vmax;top:-6vmax;animation:m2 28s ease-in-out infinite alternate}
-.aurora i:nth-child(3){width:38vmax;height:38vmax;background:#ffc9d6;right:-12vmax;bottom:-18vmax;opacity:.45;animation:m3 30s ease-in-out infinite alternate}
-.aurora i:nth-child(4){width:34vmax;height:34vmax;background:#c4dcff;left:-10vmax;bottom:-14vmax;opacity:.5;animation:m2 26s ease-in-out infinite alternate-reverse}
+.aurora i{position:absolute;border-radius:50%;opacity:.55;will-change:transform;background-image:radial-gradient(closest-side,currentColor,transparent)!important;background-color:transparent!important}
+.aurora i:nth-child(1){width:44vmax;height:44vmax;color:#9ff0dc;left:-14vmax;top:-16vmax;animation:m1 24s ease-in-out infinite alternate}
+.aurora i:nth-child(2){width:36vmax;height:36vmax;color:#ffe2a8;right:-10vmax;top:-6vmax;animation:m2 28s ease-in-out infinite alternate}
+.aurora i:nth-child(3){width:38vmax;height:38vmax;color:#ffc9d6;right:-12vmax;bottom:-18vmax;opacity:.45;animation:m3 30s ease-in-out infinite alternate}
+.aurora i:nth-child(4){width:34vmax;height:34vmax;color:#c4dcff;left:-10vmax;bottom:-14vmax;opacity:.5;animation:m2 26s ease-in-out infinite alternate-reverse}
 .aurora i:nth-child(5),.aurora i:nth-child(6){display:none}
 .aurora::after{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(17,24,39,.05) 1px,transparent 1px);background-size:24px 24px;mask-image:linear-gradient(to bottom,#000,transparent 60%);-webkit-mask-image:linear-gradient(to bottom,#000,transparent 60%)}
 @keyframes m1{to{transform:translate(16vmax,12vmax) scale(1.12)}}
@@ -60,11 +61,15 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .brand:hover .logo{transform:rotate(-12deg) scale(1.08)}
 .brand-t{min-width:0}
 .brand-t b{display:block;font-family:var(--f-display);font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:600}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .live i{width:7px;height:7px;border-radius:50%;background:#c3c8d2}
 .live.on i{background:#12b886;animation:ping 2s infinite}
 @keyframes ping{0%{box-shadow:0 0 0 0 rgba(18,184,134,.6)}70%,100%{box-shadow:0 0 0 8px rgba(18,184,134,0)}}
-.top-actions{display:flex;align-items:center;gap:10px}
+.top-actions{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.chip svg{width:16px;height:16px;flex:0 0 auto}
+.chip[hidden]{display:none!important}
+#routePublic,#routeAdmin,#console,.panel{grid-template-columns:minmax(0,1fr)}
+.console-head>*{min-width:0;max-width:100%}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:#fff;border:1px solid var(--line2);font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;box-shadow:var(--shadow);transition:transform .2s var(--spring)}
 .chip:hover{transform:translateY(-2px)}
 .icon-btn{position:relative;width:42px;height:42px;border-radius:14px;background:#fff;border:1px solid var(--line2);box-shadow:var(--shadow);display:grid;place-items:center;cursor:pointer;transition:transform .2s var(--spring);flex:0 0 auto}
@@ -77,7 +82,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 main{padding-block:28px 120px;display:grid;gap:20px}
 
 /* Cards */
-.tile{position:relative;background:var(--card);backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);border:1px solid rgba(255,255,255,.9);border-radius:28px;padding:24px;box-shadow:var(--shadow);min-width:0;overflow:hidden}
+.tile{position:relative;background:var(--card);border:1px solid rgba(255,255,255,.9);border-radius:28px;padding:24px;box-shadow:var(--shadow);min-width:0;overflow:hidden}
 .tile h2{font-size:19px}
 .tilt{transform:perspective(1100px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .5s var(--ease),box-shadow .4s}
 .tilt:hover{box-shadow:var(--shadow-lg)}
@@ -93,9 +98,11 @@ main{padding-block:28px 120px;display:grid;gap:20px}
 @media (max-width:960px){.bento.admin-b{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"hero hero" "s1 s2" "s3 s4"}}
 
 /* Hero (gradient) */
-.hero{display:grid;gap:20px;align-content:space-between;min-height:260px;color:#fff;border:0;background:linear-gradient(125deg,#0b8f86,#13b9a0 35%,#3cc99a 55%,#f5b331 100%);background-size:220% 220%;animation:heroShift 14s ease-in-out infinite alternate;box-shadow:0 24px 60px -20px rgba(15,168,155,.55)}
-.hero.in{animation:blurin .9s var(--ease) both,heroShift 14s ease-in-out infinite alternate}
-@keyframes heroShift{0%{background-position:0% 50%}100%{background-position:100% 50%}}
+.hero{display:grid;gap:20px;align-content:space-between;min-height:260px;color:#fff;border:0;background:linear-gradient(125deg,#0b8f86,#13b9a0 35%,#3cc99a 55%,#f5b331 100%);box-shadow:0 24px 60px -20px rgba(15,168,155,.55)}
+.hero.in{animation:blurin .7s var(--ease) both}
+.hero>*:not(.glow):not(.glare){position:relative;z-index:1}
+.hero::before{content:"";position:absolute;inset:-40%;background:radial-gradient(circle at 30% 40%,rgba(255,255,255,.22),transparent 45%);animation:heroDrift 12s ease-in-out infinite alternate;will-change:transform;pointer-events:none}
+@keyframes heroDrift{to{transform:translate3d(18%,10%,0)}}
 .admin-b .hero{min-height:0}
 .glow{position:absolute;right:-80px;top:-80px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.35),transparent 65%);pointer-events:none;animation:breathe 7s ease-in-out infinite}
 .hero::after{content:"₹";position:absolute;right:28px;bottom:-60px;font-family:var(--f-display);font-weight:800;font-size:240px;line-height:1;color:rgba(255,255,255,.1);pointer-events:none}
@@ -168,7 +175,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
 .note{margin:0;color:var(--muted);font-size:13.5px}
 
 /* Ticker */
-.ticker{position:relative;overflow:hidden;border-radius:18px;background:rgba(255,255,255,.75);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.9);box-shadow:var(--shadow);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.ticker{position:relative;overflow:hidden;border-radius:18px;background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.9);box-shadow:var(--shadow);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
 .ticker-track{display:flex;gap:40px;width:max-content;padding:12px 18px;animation:marquee var(--dur,40s) linear infinite}
 .ticker:hover .ticker-track{animation-play-state:paused}
 .ticker-item{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;white-space:nowrap;color:var(--muted)}
@@ -222,7 +229,8 @@ main{padding-block:28px 120px;display:grid;gap:20px}
 /* People */
 .people{display:grid;gap:18px}
 .people-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;min-width:0;max-width:100%}
+.tile>*,.panel>*{min-width:0}
 .filters .seg{flex:0 1 auto}
 .filters .input{flex:1 1 180px;width:auto;padding-block:10px}
 .filters .select{flex:0 1 170px;width:auto;padding-block:10px}
@@ -274,6 +282,23 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   .p-act{grid-column:1/-1}
   .p-act .btn{flex:1}
   .p-act .btn.ghost,.p-act .btn.danger{flex:0 0 auto}
+  .tile{padding:18px;border-radius:22px}
+  .hero{min-height:0;gap:14px}
+  .hero .amount{font-size:clamp(44px,14vw,64px)}
+  .pct-badge{font-size:16px;padding:8px 12px}
+  .stat{min-height:0}
+  .stat b{font-size:30px}
+  .console-head{align-items:stretch}
+  .console-head .seg{width:100%;overflow-x:auto;scrollbar-width:none}
+  .console-head .seg::-webkit-scrollbar{display:none}
+  .console-head .seg button{flex:1 0 auto;padding-left:12px;padding-right:12px}
+  .pf-body{padding:6px 16px 20px}
+  .toasts{top:calc(72px + env(safe-area-inset-top,0px));right:12px;width:calc(100vw - 24px)}
+  .top-actions{gap:8px}
+  .chip{padding:0;width:42px;height:42px;justify-content:center;border-radius:14px}
+  .chip span{display:none}
+  .filters .seg{flex:1 1 100%}
+  .filters .input,.filters .select{flex:1 1 140px}
 }
 .empty-state{display:grid;justify-items:center;gap:8px;text-align:center;padding:40px 16px;border-radius:20px;border:1.5px dashed var(--line2);background:rgba(255,255,255,.6);color:var(--muted)}
 .empty-state h3{font-size:17px;color:var(--ink)}
@@ -335,16 +360,17 @@ main{padding-block:28px 120px;display:grid;gap:20px}
 .none{padding:40px 16px;text-align:center;color:var(--muted)}
 
 /* Toasts & banner */
-.toasts{position:fixed;z-index:50;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:grid;gap:10px;width:min(400px,calc(100vw - 32px))}
-.toast{position:relative;overflow:hidden;display:grid;grid-template-columns:38px 1fr;gap:12px;align-items:center;padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);box-shadow:var(--shadow-lg);animation:toastin .5s var(--spring)}
+.toasts{position:fixed;z-index:60;top:calc(84px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:10px;width:min(380px,calc(100vw - 32px));pointer-events:none}
+.toasts>*{pointer-events:auto}
+.toast{position:relative;overflow:hidden;display:grid;grid-template-columns:38px 1fr;gap:12px;align-items:center;padding:14px 16px;border-radius:18px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-lg);animation:toastin .5s var(--spring)}
 .toast .ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-weight:800;color:#fff;background:linear-gradient(135deg,#f5a524,#ffd166)}
 .toast .ic.paid{background:linear-gradient(135deg,#12b886,#38d9a9)}
 .toast b{font-size:14px;font-weight:600}
 .toast small{display:block;color:var(--muted);font-size:12.5px}
 .toast .timer{position:absolute;left:0;bottom:0;height:3px;background:var(--grad);animation:timer 4.5s linear forwards}
 .toast.out{animation:toastout .35s var(--ease) forwards}
-@keyframes toastin{from{opacity:0;transform:translateY(24px) scale(.94)}}
-@keyframes toastout{to{opacity:0;transform:translateY(16px) scale(.96)}}
+@keyframes toastin{from{opacity:0;transform:translate3d(40px,0,0) scale(.96)}}
+@keyframes toastout{to{opacity:0;transform:translate3d(40px,0,0) scale(.96)}}
 @keyframes timer{from{width:100%}to{width:0}}
 .banner{padding:14px 18px;border-radius:18px;background:rgba(255,248,230,.95);border:1px solid #ffe2a8;font-weight:500;font-size:14px;box-shadow:var(--shadow);animation:rise .4s var(--ease)}
 .banner[data-tone=err]{background:#fff0f0;border-color:#ffc9c9}
@@ -359,8 +385,13 @@ main{padding-block:28px 120px;display:grid;gap:20px}
 .upi-logo{flex:0 0 auto;display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:var(--grad);color:#fff;font-family:var(--f-display);font-weight:800;font-size:13px;letter-spacing:.04em;box-shadow:0 8px 18px -8px rgba(15,168,155,.8)}
 .upi-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
 .upi-btns .btn{width:100%}
-.upi-id{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);font-weight:600;min-width:0}
-.upi-id code{flex:1;min-width:0;font-family:var(--f-body);font-size:14px;font-weight:700;color:var(--ink);overflow-wrap:anywhere}
+.upi-status{margin:0;padding:10px 14px;border-radius:14px;font-size:13.5px;font-weight:600;background:var(--paid-bg);color:#0b6b4d}
+.upi-status.warn{background:var(--part-bg);color:#8a5a00}
+.upi-id{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:13px;color:var(--muted);font-weight:600;min-width:0}
+.upi-id code{flex:1 1 140px;min-width:0;word-break:break-all;font-family:var(--f-body);font-size:14px;font-weight:700;color:var(--ink);overflow-wrap:anywhere}
+.linkish{background:none!important;border:0!important;box-shadow:none!important;color:var(--muted);font-weight:500;font-size:13px;padding:6px;white-space:normal;text-align:center}
+.linkish b{color:var(--teal);font-weight:700}
+.pop-in{animation:pfpop .55s var(--spring)}
 .pay-cta{width:100%;padding:15px 18px;font-size:16px;border-radius:16px;animation:ctaGlow 2.6s ease-in-out infinite}
 .pay-cta svg{width:20px;height:20px}
 @keyframes ctaGlow{0%,100%{box-shadow:0 10px 24px -10px rgba(15,168,155,.8)}50%{box-shadow:0 10px 34px -6px rgba(15,168,155,.95),0 0 0 6px rgba(20,199,165,.15)}}
@@ -393,8 +424,8 @@ main{padding-block:28px 120px;display:grid;gap:20px}
 @keyframes pfdraw{to{stroke-dashoffset:0}}
 .pf-done p{margin:0;color:var(--muted)}
 @keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
-@keyframes blurin{from{opacity:0;filter:blur(10px);transform:translateY(24px) scale(.98)}}
-.in{animation:blurin .9s var(--ease) both;animation-delay:calc(var(--d,0) * 90ms)}
+@keyframes blurin{from{opacity:0;transform:translate3d(0,22px,0) scale(.985)}}
+.in{animation:blurin .7s var(--ease) both;animation-delay:calc(var(--d,0) * 90ms)}
 .confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.aurora i{display:none}}
 </style>
@@ -410,8 +441,8 @@ main{padding-block:28px 120px;display:grid;gap:20px}
       <div class="brand-t"><b id="title">Team Fund</b><span class="live" id="live"><i></i><span id="liveText">Connecting…</span></span></div>
     </div>
     <div class="top-actions">
-      <a class="chip" id="toPublic" href="#" hidden>Public page</a>
-      <button class="chip" id="signOut" hidden>Sign out</button>
+      <a class="chip" id="toPublic" href="#" hidden aria-label="Public page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Public page</span></a>
+      <button class="chip" id="signOut" hidden aria-label="Sign out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3"/></svg><span>Sign out</span></button>
       <button class="icon-btn" id="bell" aria-label="Notifications" aria-expanded="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
         <span class="badge" id="bellCount" hidden>0</span>
@@ -450,12 +481,13 @@ main{padding-block:28px 120px;display:grid;gap:20px}
         <div class="upi" id="upiBox" hidden>
           <div class="upi-head"><span class="upi-logo">UPI</span><div><b>Pay with a UPI app</b><small>Opens GPay, PhonePe, Paytm or any UPI app on your phone</small></div></div>
           <div class="upi-btns" id="upiBtns"></div>
-          <div class="upi-id"><span>UPI ID</span><code id="upiId"></code><button class="btn sm ghost" id="upiCopy">Copy</button></div>
+          <code id="upiId" hidden></code>
         </div>
         <div class="eyebrow">Amount to pay</div>
         <div class="rates" id="rates"></div>
-        <div class="scan-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg><span>Scan with any payment app and pay. Then tap <b>I've paid</b> below, choose the amount and select your name.</span></div>
-        <button class="btn go pay-cta" id="paidBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>I've paid</button>
+        <div class="scan-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg><span>Tap a <b>Pay</b> button above or scan the QR code with any payment app. When you come back, mark your payment with your name.</span></div>
+        <button class="btn linkish" id="qrPaidLink" hidden><span>Paid by scanning the QR code? <b>Mark your payment</b></span></button>
+        <button class="btn go pay-cta" id="paidBtn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>I've paid</button>
         <p class="note" id="payNote" hidden></p>
       </article>
 
@@ -501,9 +533,9 @@ main{padding-block:28px 120px;display:grid;gap:20px}
         <div><div class="eyebrow">Admin panel</div><h1 id="aTitle">Team Fund</h1><p>Manage amounts, people and payments. Your team uses the main link.</p></div>
         <div class="seg" role="tablist" id="admTabs"><span class="seg-ind"></span>
           <button role="tab" data-t="overview" aria-selected="true">Overview</button>
-          <button role="tab" data-t="people" aria-selected="false">People<em id="aPeopleCount">0</em></button>
-          <button role="tab" data-t="amounts" aria-selected="false">Amounts</button>
           <button role="tab" data-t="setup" aria-selected="false">Payment setup</button>
+          <button role="tab" data-t="amounts" aria-selected="false">Amount</button>
+          <button role="tab" data-t="people" aria-selected="false">People<em id="aPeopleCount">0</em></button>
         </div>
       </div>
 
@@ -546,14 +578,14 @@ main{padding-block:28px 120px;display:grid;gap:20px}
       <div class="panel" data-panel="people" hidden>
         <section class="tile form">
           <h2>Add people</h2>
-          <p class="tile-sub">Pick a role and the amount fills in. Type an amount only for someone who pays differently.</p>
+          <p class="tile-sub">Everyone pays the amount set in the Amount step. Type an amount only for someone who pays differently.</p>
           <form id="addForm" class="row" autocomplete="off">
             <label class="field" style="flex:2 1 200px">Name<input class="input" type="text" id="addName" placeholder="Rohan Mehta" maxlength="60" required></label>
-            <label class="field">Role<select class="select" id="addRole"></select></label>
+            <label class="field" hidden>Role<select class="select" id="addRole"></select></label>
             <label class="field">Amount<div class="prefix"><input class="input num" type="number" id="addAmt" min="1" step="1"></div></label>
             <button class="btn go" type="submit">Add person</button>
           </form>
-          <label class="field">Add many at once · one name per line, all get the role above<textarea class="input" id="bulk" rows="3" style="resize:vertical" placeholder="Priya&#10;Arjun&#10;Kavya"></textarea></label>
+          <label class="field">Add many at once · one name per line<textarea class="input" id="bulk" rows="3" style="resize:vertical" placeholder="Priya&#10;Arjun&#10;Kavya"></textarea></label>
           <div class="row"><button class="btn" id="bulkAdd">Add all names</button></div>
         </section>
         <section class="tile people">
@@ -566,7 +598,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
               <button role="tab" data-f="paid" aria-selected="false">Paid<em data-c="paid">0</em></button>
             </div>
             <input class="input" type="search" id="admSearch" placeholder="Search name" aria-label="Search name">
-            <select class="select" id="admRole" aria-label="Filter by role"><option value="">All roles</option></select>
+            <select class="select" id="admRole" aria-label="Filter by role" hidden><option value="">All roles</option></select>
           </div>
           <div class="list" id="admList"></div>
         </section>
@@ -575,19 +607,17 @@ main{padding-block:28px 120px;display:grid;gap:20px}
       <!-- Amounts -->
       <div class="panel" data-panel="amounts" hidden>
         <section class="tile form" style="max-width:720px">
-          <h2>Roles &amp; amounts</h2>
-          <p class="tile-sub">For example TL pays ₹1,000 and Team member pays ₹500. Changing an amount updates everyone in that role, except people with their own amount.</p>
-          <div class="roles" id="roleRows"></div>
-          <div class="row"><button class="btn" id="addRoleBtn">+ Add role</button><button class="btn go" id="saveRoles">Save amounts</button></div>
-        </section>
-        <section class="tile form" style="max-width:720px;margin-top:18px">
-          <h2>Payment choices</h2>
-          <p class="tile-sub">After paying, each person taps <b>I've paid</b> and picks one of these two amounts to say how much they paid. Leave both empty and they simply confirm their full amount.</p>
+          <h2>Amount</h2>
+          <p class="tile-sub">How much each person pays. Changing it updates everyone, except people you gave their own amount.</p>
+          <label class="field" style="max-width:320px">Amount each person pays<div class="prefix"><input class="input num" type="number" min="1" step="1" id="amtEach" placeholder="e.g. 500"></div></label>
+          <h2 style="margin-top:8px">Pay buttons</h2>
+          <p class="tile-sub">These amounts show as <b>Pay</b> buttons that open the UPI app, and as choices when someone marks their payment. Leave empty to use the amount above.</p>
           <div class="row">
-            <label class="field">Choice 1<div class="prefix"><input class="input num" type="number" min="0" step="1" id="ch1" placeholder="e.g. 500"></div></label>
-            <label class="field">Choice 2<div class="prefix"><input class="input num" type="number" min="0" step="1" id="ch2" placeholder="e.g. 1000"></div></label>
-            <button class="btn go" id="saveChoices">Save choices</button>
+            <label class="field">Choice 1<div class="prefix"><input class="input num" type="number" min="0" step="1" id="ch1" placeholder="optional"></div></label>
+            <label class="field">Choice 2<div class="prefix"><input class="input num" type="number" min="0" step="1" id="ch2" placeholder="optional"></div></label>
           </div>
+          <div class="row"><button class="btn go" id="saveAmount">Save &amp; continue →</button></div>
+          <div hidden><div class="roles" id="roleRows"></div><button id="addRoleBtn"></button><button id="saveRoles"></button><button id="saveChoices"></button></div>
         </section>
       </div>
 
@@ -597,16 +627,14 @@ main{padding-block:28px 120px;display:grid;gap:20px}
           <h2>Payment setup</h2>
           <label class="field">Collection name<input class="input" type="text" id="cfgTitle" placeholder="Team outing fund" maxlength="80"></label>
           <label class="field">Note for payers<input class="input" type="text" id="cfgNote" placeholder="Pay by Friday · add your name in the payment note" maxlength="160"></label>
-          <div class="row">
-            <label class="field">UPI ID<input class="input" type="text" id="cfgUpi" placeholder="yourname@okhdfcbank" maxlength="120" autocapitalize="off" spellcheck="false"></label>
-            <label class="field">Name on UPI account<input class="input" type="text" id="cfgUpiName" placeholder="Shown in the payment app" maxlength="60"></label>
-          </div>
+          <input type="hidden" id="cfgUpi"><input type="hidden" id="cfgUpiName">
           <label class="drop" for="cfgQr" id="drop">
             <span class="thumb" id="qrThumb"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></span>
             <span><b>Upload your QR code</b><br><span class="note" id="qrDropText">Tap or drop the QR image (PNG or JPG)</span></span>
           </label>
           <input type="file" id="cfgQr" accept="image/*" hidden>
-          <div class="row"><button class="btn go" id="saveCfg">Save setup</button></div>
+          <p class="upi-status" id="upiStatus" hidden></p>
+          <div class="row"><button class="btn go" id="saveCfg">Save &amp; continue →</button></div>
         </section>
       </div>
     </div>
@@ -714,6 +742,34 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     };
   }
 
+
+  /* ---------- UPI helpers ---------- */
+  const UPI_RE = /^[\w.\-]{2,256}@[a-zA-Z][a-zA-Z0-9.\-]{1,63}$/;
+  function parseUpi(text) {
+    if (!text || !/^upi:\/\/pay\?/i.test(text)) return null;
+    const params = new URLSearchParams(text.slice(text.indexOf("?") + 1)), pa = (params.get("pa") || "").trim();
+    return UPI_RE.test(pa) ? { pa, pn: params.get("pn") || "", params: Object.fromEntries(params) } : null;
+  }
+  async function readQr(src) {
+    try {
+      for (let i = 0; !window.jsQR && i < 40; i++) await sleep(150);
+      if (!window.jsQR) return null;
+      const img = new Image(); img.crossOrigin = "anonymous";
+      await new Promise((ok, bad) => { img.onload = ok; img.onerror = bad; img.src = src; });
+      const k = Math.min(1, 1000 / Math.max(img.naturalWidth, img.naturalHeight)), w = Math.round(img.naturalWidth * k), h = Math.round(img.naturalHeight * k);
+      const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+      const cx = cv.getContext("2d", { willReadFrequently: true }); cx.fillStyle = "#fff"; cx.fillRect(0, 0, w, h); cx.drawImage(img, 0, 0, w, h);
+      const r = window.jsQR(cx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: "attemptBoth" });
+      return r ? r.data : null;
+    } catch (e) { console.warn("QR read failed", e); return null; }
+  }
+  // "I've paid" shows once someone is back from paying (or always when there is no UPI button to use)
+  function renderPaidCta() {
+    const ready = S.cfgReady && !S.qrReading, show = ready && (S.showPaid || !S.hasUpi);
+    const b = $("paidBtn"); if (show && b.hidden) { b.hidden = false; replay(b, "pop-in"); } else if (!show) b.hidden = true;
+    $("qrPaidLink").hidden = !ready || show;
+  }
+
   const S = {
     db:null, isAdmin:false, adminKnown:false, canWrite:true, cfg:{}, roles:[], draftRoles:null, people:[], events:[],
     route:"public", atab: store.get("chanda.atab") || "overview",
@@ -804,9 +860,11 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   const typingIn = sel => document.activeElement?.closest?.(sel);
 
   /* ---------- data helpers ---------- */
+  // One amount for everyone (no TL / roles)
   function rolesFromCfg(c) {
-    if (Array.isArray(c.roles) && c.roles.length) return c.roles.map(r => ({ id:String(r.id), name:String(r.name || "Role"), amount:Math.round(+r.amount || 0) }));
-    return [{ id:"lead", name:"TL", amount:0 }, { id:"member", name:"Team member", amount:Math.round(+c.amount || 0) }];
+    const rs = Array.isArray(c.roles) ? c.roles : [];
+    const amount = Math.round(+c.amount || +(rs.find(r => r.id === "member") || {}).amount || +(rs.find(r => +r.amount > 0) || {}).amount || 0);
+    return [{ id:"member", name:"Each person", amount }];
   }
   const choicesOf = c => (Array.isArray(c?.choices) ? c.choices : []).map(v => Math.round(+v || 0)).filter(v => v > 0).slice(0, 2);
   const roleOf = id => S.roles.find(r => r.id === id);
@@ -845,6 +903,8 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     document.querySelectorAll("[data-panel]").forEach(p => { const on = p.dataset.panel === S.atab; if (on && p.hidden) { p.hidden = false; replay(p, "in"); } else if (!on) p.hidden = true; });
     requestAnimationFrame(moveAll);
   }
+  function goTab(t) { S.atab = t; store.set("chanda.atab", t); S.enter.adm = true; renderTabs(); renderLists();
+    scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" }); }
   $("admTabs").addEventListener("click", e => { const b = e.target.closest("button[data-t]"); if (!b) return; S.atab = b.dataset.t; store.set("chanda.atab", S.atab); S.enter.adm = true; renderTabs(); renderLists(); });
 
   /* ---------- render ---------- */
@@ -853,14 +913,21 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     $("title").textContent = title; $("aTitle").textContent = title;
     $("heroLabel").textContent = c.title ? `${c.title} · payments done` : "Payments done";
     const set = S.roles.filter(r => r.amount > 0);
-    $("rates").innerHTML = set.length ? set.map(r => `<div class="rate ${isLead(r) ? "lead" : ""}"><span>${esc(r.name)}</span><b class="num">${inr(r.amount)}</b></div>`).join("")
+    $("rates").innerHTML = set.length ? set.map(r => `<div class="rate"><span>Each person pays</span><b class="num">${inr(r.amount)}</b></div>`).join("")
       : `<div class="rate"><span>Amounts coming soon</span><b class="num">₹—</b></div>`;
     $("payNote").hidden = !c.note; $("payNote").textContent = c.note || "";
-    const upi = String(c.upi || "").trim(), upiOk = /^[\w.\-]{2,256}@[a-zA-Z][a-zA-Z0-9.\-]{1,63}$/.test(upi);
-    $("upiBox").hidden = !upiOk;
+    const fromQr = S.qrUpi && S.qrUpi.src === c.qrUrl ? S.qrUpi : null;
+    if (c.qrUrl && !c.upi && !fromQr && S.qrUpiTried !== c.qrUrl) { S.qrUpiTried = c.qrUrl; S.qrReading = true;
+      readQr(c.qrUrl).then(t => { const u = parseUpi(t); if (u) S.qrUpi = { ...u, src: c.qrUrl }; S.qrReading = false; renderConfig(); }); }
+    const upi = String(c.upi || fromQr?.pa || "").trim(), upiOk = UPI_RE.test(upi);
+    S.hasUpi = upiOk; $("upiBox").hidden = !upiOk; renderPaidCta();
     if (upiOk) {
-      const pn = c.upiName || c.title || "Team Fund", tn = c.title || "Team Fund";
-      const link = am => "upi://pay?" + new URLSearchParams({ pa: upi, pn, cu: "INR", tn, ...(am ? { am: String(am) } : {}) }).toString();
+      const pn = c.upiName || fromQr?.pn || c.title || "Team Fund", tn = c.title || "Team Fund";
+      const saved = parseUpi(c.upiQr);   // keep merchant fields from the QR (mc, tr…)
+      const base = saved && saved.pa === upi ? saved.params : !c.upi && fromQr ? fromQr.params : null;
+      const link = am => { const q = new URLSearchParams(base || { pa: upi, pn });
+        q.set("cu", "INR"); if (!q.get("tn")) q.set("tn", tn); if (am) q.set("am", String(am)); else q.delete("am");
+        return "upi://pay?" + q.toString(); };
       const amts = choicesOf(c).length ? choicesOf(c) : [...new Set(S.roles.map(r => r.amount).filter(v => v > 0))].sort((a, b) => a - b);
       $("upiBtns").innerHTML = amts.map(v => `<a class="btn go" data-upi-amt="${v}" href="${esc(link(v))}">Pay ${inr(v)}</a>`).join("")
         + `<a class="btn ${amts.length ? "ghost" : "go"}" data-upi-amt="0" href="${esc(link(0))}">${amts.length ? "Other amount" : "Open UPI app"}</a>`;
@@ -878,11 +945,14 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     ar.value = S.roles.some(r => r.id === acur) ? acur : (S.roles.find(r => !isLead(r)) || S.roles[0] || {}).id || "";
     if (!typingIn("#addAmt")) $("addAmt").placeholder = roleOf(ar.value)?.amount || "Amount";
     if (!typingIn("[data-panel=setup]")) {
-      $("cfgTitle").value = c.title || ""; $("cfgNote").value = c.note || ""; $("cfgUpi").value = c.upi || ""; $("cfgUpiName").value = c.upiName || "";
+      $("cfgTitle").value = c.title || ""; $("cfgNote").value = c.note || "";
+      if (!S.pendingQr) { $("cfgUpi").value = c.upi || ""; $("cfgUpiName").value = c.upiName || ""; }
       if (c.qrUrl && !S.pendingQr) { $("qrThumb").innerHTML = `<img src="${esc(c.qrUrl)}" alt="">`; $("qrDropText").textContent = "Tap to replace your QR code"; }
     }
     if (!S.draftRoles && !typingIn("#roleRows")) renderRoleRows();
     if (!typingIn("#ch1") && !typingIn("#ch2")) { const ch = choicesOf(c); $("ch1").value = ch[0] || ""; $("ch2").value = ch[1] || ""; }
+    if (!typingIn("#amtEach")) $("amtEach").value = S.roles[0]?.amount || "";
+    if (!S.pendingQr) setUpiStatus(c.upi || (S.qrUpi && S.qrUpi.src === c.qrUrl ? S.qrUpi.pa : ""), !!c.qrUrl, S.qrReading);
   }
 
   function renderRoleRows() {
@@ -906,7 +976,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     $("meter").setAttribute("aria-valuenow", pplPct);
     $("pubMeta").textContent = S.people.length ? `${t.paid} of ${S.people.length} paid` : "";
     $("admMeta").textContent = $("pubMeta").textContent; $("aPeopleCount").textContent = S.people.length;
-    $("heroFoot").textContent = S.people.length ? `${t.paid} of ${S.people.length} people have paid` : "No one added yet";
+    $("heroFoot").textContent = !S.people.length ? "No one added yet" : t.due ? `${t.due} ${t.due === 1 ? "person" : "people"} still to pay` : "Everyone has paid 🎉";
     const paidPeople = S.people.filter(p => status(p) === "paid").sort((a,b) => (b.paidAt||0) - (a.paidAt||0));
     $("stack").innerHTML = paidPeople.slice(0, 5).map((p, i) => `<span style="--i:${i};${avStyle(p.name)}" title="${esc(p.name)}">${esc(initials(p.name))}</span>`).join("")
       + (paidPeople.length > 5 ? `<span style="--i:5;background:var(--mango)">+${paidPeople.length - 5}</span>` : "");
@@ -944,14 +1014,14 @@ main{padding-block:28px 120px;display:grid;gap:20px}
                           : (p.selfMarked && !p.verified ? `<button class="btn sm go" data-act="verify" data-id="${p.id}">Looks good</button>` : "") + `<button class="btn sm ghost" data-act="unpay" data-id="${p.id}">Undo</button>`;
       act += `<button class="btn sm ghost" data-act="edit" data-id="${p.id}">Edit</button>`;
       act += `<button class="btn sm ${S.armed === p.id ? "danger arm" : "ghost danger"}" data-act="del" data-id="${p.id}" aria-label="Remove ${esc(p.name)}">${S.armed === p.id ? "Remove?" : "✕"}</button>`;
-    } else if (S.canWrite && (s === "pending" || s === "partial")) act = `<button class="btn sm go" data-act="claim" data-id="${p.id}">I've paid</button>`;
+    } else if (S.canWrite && (S.showPaid || !S.hasUpi) && (s === "pending" || s === "partial")) act = `<button class="btn sm go" data-act="claim" data-id="${p.id}">I've paid</button>`;
     let ex = "";
     if (mode === "adm" && S.open?.id === p.id && S.open.mode === "pay") ex = `<div class="expand">
         <label class="field">Amount received<div class="prefix"><input class="input num" type="number" id="exAmt" min="1" step="1" value="${left}"></div></label>
         <button class="btn sm go" data-act="paysave" data-id="${p.id}">Save payment</button><button class="btn sm ghost" data-act="close">Cancel</button></div>`;
     if (mode === "adm" && S.open?.id === p.id && S.open.mode === "edit") ex = `<div class="expand">
         <label class="field">Name<input class="input" type="text" id="exName" value="${esc(p.name)}" maxlength="60"></label>
-        <label class="field">Role<select class="select" id="exRole">${S.roles.map(x => `<option value="${esc(x.id)}" ${x.id === p.role ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>
+        <label class="field" hidden>Role<select class="select" id="exRole">${S.roles.map(x => `<option value="${esc(x.id)}" ${x.id === p.role ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>
         <label class="field">Amount to pay<div class="prefix"><input class="input num" type="number" id="exDue" min="1" step="1" value="${due}"></div></label>
         <button class="btn sm go" data-act="editsave" data-id="${p.id}">Save</button><button class="btn sm ghost" data-act="close">Cancel</button></div>`;
     if (mode === "pub" && S.open?.id === p.id && S.open.mode === "claim") { const ch = choicesOf(S.cfg);
@@ -961,7 +1031,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     const fx = S.celebrate.has(p.id) ? " celebrate" : S.flash.has(p.id) ? " flash" : "";
     return `<div class="person st-${s}${fx}${enter ? " enter" : ""}" style="--i:${Math.min(idx, 12)}" data-id="${p.id}">
       <div class="av" style="${avStyle(p.name)}">${esc(initials(p.name))}${s === "paid" ? `<span class="tick">✓</span>` : ""}</div>
-      <div class="p-main"><div class="p-name">${esc(p.name)}${r ? `<span class="tag ${isLead(r) ? "lead" : ""}">${esc(r.name)}</span>` : ""}${mode === "adm" && p.custom ? `<span class="tag">Custom</span>` : ""}${mode === "adm" && p.selfMarked && !p.verified && +p.paid > 0 ? `<span class="tag" style="background:var(--pink-soft)">Self-marked</span>` : ""}</div>
+      <div class="p-main"><div class="p-name">${esc(p.name)}${r && S.roles.length > 1 ? `<span class="tag ${isLead(r) ? "lead" : ""}">${esc(r.name)}</span>` : ""}${mode === "adm" && p.custom ? `<span class="tag">Custom</span>` : ""}${mode === "adm" && p.selfMarked && !p.verified && +p.paid > 0 ? `<span class="tag" style="background:var(--pink-soft)">Self-marked</span>` : ""}</div>
         <div class="p-sub">${sub}</div>${paid > 0 && s !== "paid" ? `<div class="mini"><i style="width:${due ? Math.min(100, paid/due*100) : 0}%"></i></div>` : ""}</div>
       <div class="p-amt"><b class="num">${inr(due)}</b><span class="pill ${s}">${label[s]}</span></div>
       ${act ? `<div class="p-act">${act}</div>` : ""}${ex}</div>`;
@@ -1028,10 +1098,10 @@ main{padding-block:28px 120px;display:grid;gap:20px}
 
   async function addPeople(names, roleId, amt) {
     const r = roleOf(roleId), custom = +amt > 0 && +amt !== (r?.amount || 0), due = Math.round(+amt || r?.amount || 0);
-    if (!due) { banner(`Set an amount for ${r ? r.name : "this role"} in Amounts first, or type an amount.`, "err"); return false; }
+    if (!due) { banner("Set the amount in the Amount step first, or type an amount.", "err"); return false; }
     try {
       for (const name of names) await S.db.collection("people").add({ name, role: roleId, due, custom, paid: 0, claimed: false, addedAt: Date.now() });
-      await logEvent("add", names.length === 1 ? `${names[0]} added${r ? " as " + r.name : ""} · pays ${inr(due)}` : `${names.length} ${r ? r.name : "people"} added · ${inr(due)} each`);
+      await logEvent("add", names.length === 1 ? `${names[0]} added · pays ${inr(due)}` : `${names.length} people added · ${inr(due)} each`);
       banner(""); toast(names.length === 1 ? `${names[0]} added` : `${names.length} people added`, `${inr(due)} each`, "paid"); return true;
     } catch (e) { fail(e, "add people"); return false; }
   }
@@ -1067,7 +1137,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     const list = S.people.filter(p => status(p) !== "paid" && (!q || String(p.name).toLowerCase().includes(q))).sort((a, b) => String(a.name).localeCompare(b.name));
     if (!list.length) return `<div class="empty-state" style="padding:20px">${!S.people.length ? "The organiser hasn't added anyone yet." : q ? "No name matches. Check the spelling." : "Everyone has already paid 🎉"}</div>`;
     return list.map((p, k) => { const r = roleOf(p.role), left = Math.max(0, (+p.due || 0) - (+p.paid || 0));
-      return `<button class="pf-name" style="--k:${Math.min(k, 10)}" data-pf-pid="${p.id}"><span class="pf-av" style="${avStyle(p.name)}">${esc(initials(p.name))}</span><span><b>${esc(p.name)}</b><small>${r ? esc(r.name) + " · " : ""}${inr(left)} to pay</small></span></button>`; }).join("");
+      return `<button class="pf-name" style="--k:${Math.min(k, 10)}" data-pf-pid="${p.id}"><span class="pf-av" style="${avStyle(p.name)}">${esc(initials(p.name))}</span><span><b>${esc(p.name)}</b><small>${inr(left)} to pay</small></span></button>`; }).join("");
   }
   function renderPF() {
     $("pf").querySelectorAll(".pf-steps i").forEach((el, i) => el.classList.toggle("on", i < Math.min(PF.step, 3)));
@@ -1116,6 +1186,7 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     } catch (e) { PF.busy = false; btn.disabled = false; btn.textContent = "Confirm payment"; fail(e, "save your payment"); }
   }
   $("paidBtn").addEventListener("click", () => openPay(null));
+  $("qrPaidLink").addEventListener("click", () => { S.showPaid = true; renderPaidCta(); renderLists(); openPay(null); });
 
   // Coming back from the UPI app: open the flow with the chosen amount.
   const UPI_KEY = "teamfund.upiPending";
@@ -1129,12 +1200,13 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     if (age < 2500) return;                                   // still switching apps
     store.set(UPI_KEY, "");
     if (age > 45 * 60 * 1000) return;                         // too old, ignore
+    S.showPaid = true; renderPaidCta(); renderLists();
     openPay(null, { amt: pend.amt, back: true });
   }
   document.addEventListener("visibilitychange", () => setTimeout(checkUpiReturn, 400));
   addEventListener("pageshow", () => setTimeout(checkUpiReturn, 400));
   addEventListener("focus", () => setTimeout(checkUpiReturn, 400));
-  $("upiCopy").addEventListener("click", () => copy($("upiId").textContent, "UPI ID copied"));
+
   $("pfClose").addEventListener("click", closePay);
   $("pf").addEventListener("click", e => {
     if (e.target === $("pf")) return closePay();
@@ -1218,6 +1290,26 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     btn.disabled = false; btn.textContent = "Save amounts";
   });
 
+
+  // Amount step: one amount for everyone + optional Pay-button amounts
+  $("saveAmount").addEventListener("click", async () => {
+    const amount = Math.round(+$("amtEach").value || 0);
+    if (amount <= 0) { banner("Enter the amount each person pays.", "err"); $("amtEach").focus(); return; }
+    const choices = [$("ch1").value, $("ch2").value].map(v => Math.round(+v || 0)).filter(v => v > 0);
+    const btn = $("saveAmount"); btn.disabled = true; btn.innerHTML = `<span class="spin"></span>Saving`;
+    try {
+      const before = S.roles[0]?.amount || 0;
+      await saveCfg({ amount, roles: [{ id: "member", name: "Each person", amount }], choices });
+      S.roles = rolesFromCfg(S.cfg); let moved = 0;
+      for (const p of S.people.filter(p => !p.custom && ((+p.due || 0) !== amount || p.role !== "member"))) {
+        await S.db.doc("people/" + p.id).update({ due: amount, role: "member" }); moved++; }
+      if (before !== amount) await logEvent("info", `Amount set to ${inr(amount)} per person`);
+      document.activeElement?.blur?.(); renderConfig(); renderStats(); banner("");
+      toast("Amount saved", `${inr(amount)} per person${moved ? ` · ${moved} updated` : ""} · Next: add people`, "paid");
+      goTab("people"); setTimeout(() => { if (matchMedia("(hover:hover)").matches) $("addName").focus(); }, 400);
+    } catch (e) { fail(e, "save the amount"); }
+    btn.disabled = false; btn.textContent = "Save & continue →";
+  });
   // Payment choices
   $("saveChoices").addEventListener("click", async () => {
     const list = [$("ch1").value, $("ch2").value].map(v => Math.round(+v || 0)).filter(v => v > 0);
@@ -1252,7 +1344,18 @@ main{padding-block:28px 120px;display:grid;gap:20px}
   });
 
   // Setup + QR
-  function pickQr(f) { if (!f || !f.type.startsWith("image/")) return; S.pendingQr = f; $("qrThumb").innerHTML = `<img src="${URL.createObjectURL(f)}" alt="">`; $("qrDropText").textContent = f.name + " · uploads when you save"; }
+  function pickQr(f) { if (!f || !f.type.startsWith("image/")) return; S.pendingQr = f; const url = URL.createObjectURL(f);
+    $("qrThumb").innerHTML = `<img src="${url}" alt="">`; $("qrDropText").textContent = f.name + " · uploads when you save";
+    setUpiStatus("", true, true);
+    readQr(url).then(t => { const u = parseUpi(t);
+      if (u) { $("cfgUpi").value = u.pa; $("cfgUpiName").value = u.pn || ""; S.pendingQrText = t; }
+      else { $("cfgUpi").value = ""; $("cfgUpiName").value = ""; S.pendingQrText = null; }
+      setUpiStatus(u ? u.pa : "", true, false); }); }
+  function setUpiStatus(pa, hasQr, reading) {
+    const el = $("upiStatus"); el.hidden = !hasQr; el.classList.toggle("warn", !reading && !pa);
+    el.textContent = reading ? "Reading your QR code…" : pa ? `✓ UPI app payment is ready. Pay buttons will open the payment app and pay to ${pa}.`
+      : "This image isn't a UPI payment QR, so the Pay buttons can't open payment apps. People can still scan it.";
+  }
   $("cfgQr").addEventListener("change", () => pickQr($("cfgQr").files[0]));
   ["dragenter","dragover"].forEach(t => $("drop").addEventListener(t, e => { e.preventDefault(); $("drop").classList.add("over"); }));
   ["dragleave","drop"].forEach(t => $("drop").addEventListener(t, e => { e.preventDefault(); $("drop").classList.remove("over"); if (t === "drop") pickQr(e.dataTransfer.files[0]); }));
@@ -1260,14 +1363,16 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     const btn = $("saveCfg"); btn.disabled = true; btn.innerHTML = `<span class="spin"></span>Saving`;
     try {
       const upi = $("cfgUpi").value.trim();
-      if (upi && !/^[\w.\-]{2,256}@[a-zA-Z][a-zA-Z0-9.\-]{1,63}$/.test(upi)) { banner("That UPI ID doesn't look right. It should look like name@bank, for example ravi@okhdfcbank.", "err"); btn.disabled = false; btn.textContent = "Save setup"; return; }
-      const patch = { title: $("cfgTitle").value.trim(), note: $("cfgNote").value.trim(), roles: S.roles, upi, upiName: $("cfgUpiName").value.trim() };
+      if (upi && !UPI_RE.test(upi)) { $("cfgUpi").value = ""; }
+      const patch = { title: $("cfgTitle").value.trim(), note: $("cfgNote").value.trim(), upi: UPI_RE.test(upi) ? upi : "", upiName: $("cfgUpiName").value.trim() };
+      if (S.pendingQrText) { patch.upiQr = S.pendingQrText; S.pendingQrText = null; }
       if (S.pendingQr) { const f = S.pendingQr, ext = ((f.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "")) || "png", path = `qr-${Date.now()}.${ext}`;
         const { error } = await sb.storage.from("qr").upload(path, f, { contentType: f.type, upsert: true }); if (error) throw error;
         patch.qrId = path; patch.qrUrl = sb.storage.from("qr").getPublicUrl(path).data.publicUrl; S.pendingQr = null; }
-      await saveCfg(patch); document.activeElement?.blur?.(); renderConfig(); toast("Setup saved", patch.title || "", "paid"); banner(""); burst(btn, 40, .8);
+      await saveCfg(patch); document.activeElement?.blur?.(); renderConfig(); toast("Setup saved", "Next: set the amount", "paid"); banner("");
+      goTab("amounts");
     } catch (e) { fail(e, "save the setup"); }
-    btn.disabled = false; btn.textContent = "Save setup";
+    btn.disabled = false; btn.textContent = "Save & continue →";
   });
 
   /* ---------- boot ---------- */
@@ -1308,10 +1413,10 @@ main{padding-block:28px 120px;display:grid;gap:20px}
     let cfgSeen = false;
 
     db.doc("config/main").onSnapshot(snap => {
-      S.cfg = snap.exists ? { ...snap.data() } : {}; S.roles = rolesFromCfg(S.cfg);
+      S.cfg = snap.exists ? { ...snap.data() } : {}; S.cfgReady = true; S.roles = rolesFromCfg(S.cfg);
       if (S.isAdmin && !snap.metadata.fromCache && !cfgSeen) { cfgSeen = true;
         if (!(S.roles.some(r => r.amount > 0) && S.cfg.qrUrl))
-          { if (S.route === "admin") banner("Start here: set amounts for TL and team members, then upload your QR code in Payment setup."); } }
+          { if (S.route === "admin") banner("Start here: upload your QR code in Payment setup, then set the amount and add people."); } }
       renderConfig(); renderLists();
     }, onErr);
 
